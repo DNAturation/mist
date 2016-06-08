@@ -30,7 +30,7 @@ def filter(missingno, strain, threshhold, passlist):
     if missingno <= threshhold:
         passlist.append(strain)
 
-def actor(passlist, outpath, mistout, testtypename):
+def acter(passlist, outpath, mistout, testtypename):
     '''does the symlinking based on the list of passed strains provided by the filter function'''
     for strain in passlist:
         if strain not in os.listdir(outpath):
@@ -52,7 +52,7 @@ def process(path, outpath, threshhold, mistout, testtypename):
     missingno = countergenes(data)
     for misses, strain in missingno:
         filter(misses, strain, threshhold, genomepasslist)
-        actor(genomepasslist, outpath, mistout, testtypename)
+        acter(genomepasslist, outpath, mistout, testtypename)
 
 def main():
     args = arguments()

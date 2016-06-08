@@ -10,10 +10,11 @@ import mistreptfilter
 import argparse
 import os
 import glob
+import multiprocessing
 
-def mistM(path, outpath, testtypename, testtype, alleles):
+def mistM(path, outpath, testtypename, testtype, alleles, cores):
     '''runs mist'''
-    mistmain.process(path, outpath, testtypename, testtype, alleles)
+    mistmain.process(path, outpath, testtypename, testtype, alleles, cores)
 
 def mistF(path, fastaoutpath, threshhold, outpath, testtypename):
     '''runs a userdefined threshold cutoff and symlinks fasta files that pass'''
@@ -45,8 +46,9 @@ def arguments():
     a_parser.add_argument('--threshhold', type=int, required=True, help='maximum amount of missed genes tolerated to allow a strain to pass')
     a_parser.add_argument('--fastaoutpath', default='./mistpass/', help='folder to place fasta file symlinks for those that pass the threshold')
     a_parser.add_argument('--distoutpath', default='./mistreport/', help='output folder for the report summary')
-    a_parser.add_argument('--distoutfile', default='report.json', help='name of the report file')
+    a_parser.add_argument('--distoutfile', default='report', help='name of the report file')
     a_parser.add_argument('-a', '--alleles', default='/home/cintiq/Desktop/campylobacterjejuni/alleles/', help='folder that contains all allele files for mist requirements')
+    a_parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count(), help='number of cores to run')
     a_parser.add_argument('path', nargs='+', help='fasta files to run mist on')
 
     b_parser = subparsers.add_parser('Refine')
@@ -60,17 +62,20 @@ def arguments():
     b_parser.add_argument('path', help='report file')
     return parser.parse_args()
 
-def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, distoutfile, fastaoutpath, threshhold):
+def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, distoutfile, fastaoutpath, threshhold, cores):
     print('Running MIST...')
-    mistM(path, outpath, testtypename, testtype, alleles)
+    mistM(path, outpath, testtypename, testtype, alleles, cores)
     print('Performing update...')
     jsonlist = glob.glob(outpath+'*./json')
     for json in jsonlist:
         mistU(alleles, json, testtypename)
     print('Making report...')
     mistD(outpath, distoutpath, distoutfile, testtype, testtypename)
-    distreploc=os.path.join(distoutpath,distoutfile)
-    print('Symlinking pssing fasta files')
+    distreploc=os.path.join(distoutpath,distoutfile+'.json')
+    print('Symlinking passing fasta files')
+    #Note: still need to fix symlinking, currently symlinks based off 'old' files
+    # if the report writer writes to an alternate file due to one already existing(reporta.json)
+    # might be able to do a for loop backwards here to sort of fix it? should be more precise though
     mistF(distreploc, fastaoutpath, threshhold, outpath, testtypename)
     print('Generate has completed')
 
@@ -88,7 +93,7 @@ def processREF(path, genomethreshhold, testtype, testtypename, markerout, outpat
 def main():
     args = arguments()
     if args.subfunction=='Generate':
-        processGEN(args.path, args.outpath, args.testtype, args.testtypename, args.alleles, args.distoutpath, args.distoutfile, args.fastaoutpath, args.threshhold)
+        processGEN(args.path, args.outpath, args.testtype, args.testtypename, args.alleles, args.distoutpath, args.distoutfile, args.fastaoutpath, args.threshhold, args.cores)
     if args.subfunction=='Refine':
         processREF(args.path, args.genomethreshhold, args.testtype, args.testtypename, args.markerout, args.reptoutpath, args.reptoutfile)
 

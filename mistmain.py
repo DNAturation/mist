@@ -26,13 +26,17 @@ def pathfinder(outpath):
 def mistargs(fastalist, outpath, testtypename, testtype, alleles):
     for file in fastalist:
         strain, extension = os.path.splitext(os.path.basename(file))
-        missed=('mist', '-b',
-                '-j', outpath+strain+testtypename+'.json',
-                '-a', alleles,
-                '-t', testtype,
-                '-T', outpath+'temp/'+strain+'/',
-                file)
-        yield missed, strain
+        if not os.path.isfile(outpath+strain+testtypename+'.json'):
+            # missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
+            missed=('mist', '-b',
+                    '-j', outpath+strain+testtypename+'.json',
+                    '-a', alleles,
+                    '-t', testtype,
+                    '-T', outpath+'temp/'+strain+'/',
+                    file)
+            yield missed, strain
+        else:
+            print('skipping strain '+strain+' due to .json file for this test already existing')
 
 
 def runmist(missed, outpath, strain):
@@ -52,20 +56,21 @@ def arguments():
     parser.add_argument('-a', '--alleles', default='alleles/')
     parser.add_argument('-T', '--testtypename', required=True, help='name of test run')
     parser.add_argument('-t', '--testtype', required=True, help='path to and type of test/markers file, ex. CGF119')
+    parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count(), help='number of cores to run on')
     parser.add_argument('path', nargs='+')
     return parser.parse_args()
 
 
-def process(path, outpath, testtypename, testtype, alleles):
+def process(path, outpath, testtypename, testtype, alleles, cores):
     listlist = getfasta(path)
-    pool = multiprocessing.Pool(int(multiprocessing.cpu_count()))
+    pool = multiprocessing.Pool(int(cores))
     for fastalist in listlist:
         pathfinder(outpath)
         margs = mistargs(fastalist, outpath, testtypename, testtype, alleles)
         for missed, strain in margs:
             pool.apply_async(runmist, args=(missed, outpath, strain))
-        pool.close()
-        pool.join()
+    pool.close()
+    pool.join()
 
 
 def main():

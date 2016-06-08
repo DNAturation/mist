@@ -6,7 +6,8 @@ import argparse
 import json
 import glob
 import os
-import re
+import string
+
 
 def pathfinder(outpath):
     if not os.access(outpath, os.F_OK):
@@ -52,9 +53,17 @@ def genes(genelist, dwriter):
 
 def JSONwriter(outpath, outfile, dwriter, dmisslist):
     '''writes the report into a json file'''
-    with open(os.path.join(outpath, outfile), 'a') as f:
-        data = {'GenomesMissingGenes': dwriter, 'GenesMissingGenomes': dmisslist}
-        json.dump(data, f, indent=4, sort_keys=True)
+    letterlist = ['']
+    letterlist = letterlist + list(string.ascii_lowercase)
+    for letter in letterlist:
+        if os.path.isfile(os.path.join(outpath, outfile+letter+'.json')):
+            pass
+        else:
+            with open(os.path.join(outpath, outfile+letter+'.json'), 'a') as f:
+                data = {'GenomesMissingGenes': dwriter, 'GenesMissingGenomes': dmisslist}
+                json.dump(data, f, indent=4, sort_keys=True)
+                break
+
 
 def genetotal(testtype):
     '''returns all genes in the .markers file'''
@@ -71,7 +80,7 @@ def genetotal(testtype):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outpath', default='./mistfail/')
-    parser.add_argument('--outfile', default='proteinsfailed.json')
+    parser.add_argument('--outfile', default='proteinsfailed')
     parser.add_argument('-t', '--testtype', required = True)
     parser.add_argument('-T', '--testtypename', required=True)
     parser.add_argument('path')
