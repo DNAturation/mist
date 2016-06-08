@@ -22,7 +22,8 @@ def mistF(path, fastaoutpath, threshhold, outpath, testtypename):
 
 def mistD(path, outpath, outfile, testtype, testtypename):
     '''generates a report'''
-    mistdistrept.process(path, outpath, outfile, testtype, testtypename)
+    letter = mistdistrept.process(path, outpath, outfile, testtype, testtypename)
+    return letter
 
 def mistU(alleles, jsons, testtypename):
     '''runs updater on mist main output, dillon's script'''
@@ -70,12 +71,9 @@ def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, dist
     for json in jsonlist:
         mistU(alleles, json, testtypename)
     print('Making report...')
-    mistD(outpath, distoutpath, distoutfile, testtype, testtypename)
-    distreploc=os.path.join(distoutpath,distoutfile+'.json')
+    letter = mistD(outpath, distoutpath, distoutfile, testtype, testtypename)
+    distreploc=os.path.join(distoutpath, distoutfile+letter+'.json')
     print('Symlinking passing fasta files')
-    #Note: still need to fix symlinking, currently symlinks based off 'old' files
-    # if the report writer writes to an alternate file due to one already existing(reporta.json)
-    # might be able to do a for loop backwards here to sort of fix it? should be more precise though
     mistF(distreploc, fastaoutpath, threshhold, outpath, testtypename)
     print('Generate has completed')
 

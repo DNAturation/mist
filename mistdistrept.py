@@ -62,7 +62,7 @@ def JSONwriter(outpath, outfile, dwriter, dmisslist):
             with open(os.path.join(outpath, outfile+letter+'.json'), 'a') as f:
                 data = {'GenomesMissingGenes': dwriter, 'GenesMissingGenomes': dmisslist}
                 json.dump(data, f, indent=4, sort_keys=True)
-                break
+            return letter
 
 
 def genetotal(testtype):
@@ -98,7 +98,8 @@ def process(path, outpath, outfile, testtype, testtypename):
         d[missingno[0]]=missingno[1]
         dwriter[missingno[0]] = missingno[2]
     dmisslist=genes(genelist, dwriter)
-    JSONwriter(outpath, outfile, dwriter, dmisslist)
+    letty = JSONwriter(outpath, outfile, dwriter, dmisslist)
+    return letty
 
 def main():
     args = arguments()

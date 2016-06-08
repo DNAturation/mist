@@ -27,8 +27,8 @@ def mistargs(fastalist, outpath, testtypename, testtype, alleles):
     for file in fastalist:
         strain, extension = os.path.splitext(os.path.basename(file))
         if not os.path.isfile(outpath+strain+testtypename+'.json'):
-            # missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
-            missed=('mist', '-b',
+            missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
+            # missed=('mist', '-b',
                     '-j', outpath+strain+testtypename+'.json',
                     '-a', alleles,
                     '-t', testtype,
