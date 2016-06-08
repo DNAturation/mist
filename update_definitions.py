@@ -1,3 +1,4 @@
+#adds in similar marker matches to a new markers file
 import json
 import os
 import argparse
@@ -29,7 +30,6 @@ def get_known_alleles(allele_dir):
     Returns a dictionary. Keys are gene names, value is list of seqs.
     """
 
-    # strips path and extension
     get_name = lambda x: os.path.basename(os.path.splitext(x)[0])
 
     known_alleles = {}

@@ -30,33 +30,33 @@ def filter(missingno, strain, threshhold, passlist):
     if missingno <= threshhold:
         passlist.append(strain)
 
-def actor(passlist, outpath, mistout, testtype):
+def actor(passlist, outpath, mistout, testtypename):
     '''does the symlinking based on the list of passed strains provided by the filter function'''
     for strain in passlist:
         if strain not in os.listdir(outpath):
-            os.symlink(os.path.join(mistout, strain)+'{}.json'.format(testtype), outpath+strain)
+            os.symlink(os.path.join(mistout, strain)+'{}.json'.format(testtypename), outpath+strain)
 
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outpath', default='./passed/')
     parser.add_argument('-thresh', '--threshhold', type=int, required=True)
-    parser.add_argument('-t', '--testtype', required=True)
+    parser.add_argument('-t', '--testtypename', required=True)
     parser.add_argument('-m', '--mistout', default='/home/cintiq/PycharmProjects/misty/mistout/')
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, threshhold, mistout, testtype):
+def process(path, outpath, threshhold, mistout, testtypename):
     pathfinder(outpath)
     data = reader(path)
     genomepasslist = []
     missingno = countergenes(data)
     for misses, strain in missingno:
         filter(misses, strain, threshhold, genomepasslist)
-        actor(genomepasslist, outpath, mistout, testtype)
+        actor(genomepasslist, outpath, mistout, testtypename)
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.threshhold, args.mistout, args.testtype)
+    process(args.path, args.outpath, args.threshhold, args.mistout, args.testtypename)
 
 if __name__ == '__main__':
     main()

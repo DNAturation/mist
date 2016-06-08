@@ -1,3 +1,4 @@
+#removes genes and species from the results file that are no longer in the new markers cutoff file
 import json
 import os
 import argparse
@@ -13,9 +14,9 @@ def reader(path):
         data = json.load(f)
     return data
 
-def glist(marker, testtype):
+def glist(marker, testtypename):
     '''opens the new markers file'''
-    with open(os.path.join(marker, testtype)+'.markers', 'r') as f:
+    with open(os.path.join(marker, testtypename)+'.markers', 'r') as f:
         genelist=[]
         data = f.readlines()[1:]
         data = [line.split()[0] for line in data]
@@ -25,6 +26,7 @@ def glist(marker, testtype):
     return genelist
 
 def gatherer(data, genelist):
+    '''creates the new set of genes and genomes'''
     d = {}
     GenesMissingGenomes={}
     GenomesMissingGenes={}
@@ -51,20 +53,20 @@ def arguments():
     parser.add_argument('-o', '--outpath', default='/home/cintiq/PycharmProjects/misty/mistreport/')
     parser.add_argument('-n', '--outfile', default='refinedreport.json')
     parser.add_argument('--marker', default='/home/cintiq/PycharmProjects/misty/marker')
-    parser.add_argument('-t', '--testtype', required=True)
+    parser.add_argument('-T', '--testtypename', required=True)
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, outfile, marker, testtype):
+def process(path, outpath, outfile, marker, testtypename):
     pathfinder(outpath)
     data = reader(path)
-    genelist = glist(marker, testtype)
+    genelist = glist(marker, testtypename)
     d = gatherer(data, genelist)
     writer(outpath, outfile, d)
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.outfile, args.marker, args.testtype)
+    process(args.path, args.outpath, args.outfile, args.marker, args.testtypename)
 
 if __name__ == '__main__':
     main()

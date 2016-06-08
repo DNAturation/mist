@@ -19,8 +19,8 @@ def reader(files):
         data = json.load(f)
     return data
 
-def counter(data, testtype):
-    genes = data['Results'][0]['TestResults'][testtype]
+def counter(data, testtypename):
+    genes = data['Results'][0]['TestResults'][testtypename]
     missingno = 0
     for gene in genes:
         if genes[gene]['CorrectMarkerMatch'] == False:
@@ -45,11 +45,11 @@ def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-thresh', '--threshhold', type=int, required=True)
     parser.add_argument('-o', '--outpath', default='./mistpass/')
-    parser.add_argument('-test', '--testtype', default='MLST')
+    parser.add_argument('--testtypename', default='core')
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, testtype, threshhold):
+def process(path, outpath, testtypename, threshhold):
     pathfinder(outpath)
     files = fileget(path)
     for item in files:
@@ -59,7 +59,7 @@ def process(path, outpath, testtype, threshhold):
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.testtype, args.threshhold)
+    process(args.path, args.outpath, args.testtypename, args.threshhold)
 
 
 if __name__ == '__main__':

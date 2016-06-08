@@ -26,17 +26,15 @@ def filter(missinggno, gene, threshhold, blacklist):
     if missinggno > threshhold:
         blacklist.append(gene)
 
-def cull(blacklist, mistfolder, testtype, markers):
-    with open(os.path.join(mistfolder, testtype)+'.markers', 'r') as ref:
-        with open(os.path.join(markers, testtype)+'.markers', 'a+') as temp:
+def cull(blacklist, testtype, testtypename, markers):
+    '''writes the new marker data out if they are not in the list of removed genes/genomes'''
+    with open(testtype, 'r') as ref:
+        with open(os.path.join(markers, testtypename)+'.markers', 'a+') as temp:
             lines = ref.readlines()
             for line in lines:
                 if blacklist == []:
                     temp.write(line)
                 if not any(gene in line for gene in blacklist):
-                    # s = 'blahblahblue'
-                    # t = ['for', 'jack', 'c', 'blue']
-                    # print(any(ext in s for ext in t))
                     temp.write(line)
 
 
@@ -45,24 +43,24 @@ def cull(blacklist, mistfolder, testtype, markers):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-thresh', '--threshhold', type=int, required=True, help='cutoff number for genomes that gene is not in')
-    parser.add_argument('-m', '--mistfolder', default='/home/cintiq/Desktop/campylobacterjejuni/', help='folder that contains all mist marker file requirements')
-    parser.add_argument('-t', '--testtype', required=True, help='type of test performed eg. MLST')
+    parser.add_argument('-T', '--testtypename', required=True, help='type of test performed eg. MLST')
+    parser.add_argument('-t', '--testtype', required=True, help='path to and name of test markers file')
     parser.add_argument('-markers', '--markersout', default='/home/cintiq/PycharmProjects/misty/markers/', help='markers folder to place new .marker in')
     parser.add_argument('path', help='report file')
     return parser.parse_args()
 
-def process(path, threshhold, mistfolder, testtype, markers):
+def process(path, threshhold, testtype, testtypename, markers):
     blacklist = []
     pathfinder(markers)
     data = reader(path)
     x = countergenomes(data)
     for missinggno, gene in x:
         filter(missinggno, gene, threshhold, blacklist)
-    cull(blacklist, mistfolder, testtype, markers)
+    cull(blacklist, testtype, testtypename, markers)
 
 def main():
     args = arguments()
-    process(args.path, args.threshhold, args.mistfolder, args.testtype, args.markerspout)
+    process(args.path, args.threshhold, args.testtype, args.testtypename, args.markerspout)
 
 if __name__ == '__main__':
     main()
