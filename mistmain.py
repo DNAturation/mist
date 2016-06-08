@@ -75,7 +75,7 @@ def process(path, outpath, testtypename, testtype, alleles, cores):
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.testtypename, args.testtype, args.alleles)
+    process(args.path, args.outpath, args.testtypename, args.testtype, args.alleles, args.cores)
 
 if __name__ == '__main__':
     main()
