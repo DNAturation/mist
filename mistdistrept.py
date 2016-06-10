@@ -8,6 +8,7 @@ import glob
 import os
 import string
 import multiprocessing
+from functools import partial
 
 
 def pathfinder(outpath):
@@ -75,12 +76,18 @@ def genetotal(testtype):
             genelist.append(data[x].split()[0])
         return genelist
 
-def mult(item, testtypename, dwriter, d):
-    data = reader(item)
-    missingno = writer(data, testtypename, item)
-    d[missingno[0]]=missingno[1]
-    dwriter[missingno[0]] = missingno[2]
-
+def mult(item, testtypename):
+    '''generates a list of dictionaries that contain strains that a gene is missing from in parallel'''
+    dwriter = {}
+    # d = manager.dict({})
+    if not os.stat(item).st_size == 0:
+        data = reader(item)
+        missingno = writer(data, testtypename, item)
+        # d[missingno[0]]=missingno[1]
+        dwriter[missingno[0]] = missingno[2]
+    else:
+        print('Skipping file '+item+' due to empty .json file')
+    return dwriter
 
 def arguments():
     parser = argparse.ArgumentParser()
@@ -93,22 +100,21 @@ def arguments():
     return parser.parse_args()
 
 def process(path, outpath, outfile, testtype, testtypename, cores):
+    pool = multiprocessing.Pool(int(cores))
+    # manager = multiprocessing.Manager()
     pathfinder(outpath)
     files = fileget(path)
-    dwriter = {}
-    d = {}
+    dwriter={}
     genelist = genetotal(testtype)
-    pool = multiprocessing.Pool(int(cores))
-    for item in files:
-        if not os.stat(item).st_size == 0:
-            # pool.apply_async(mult, args=(item, testtypename, dwriter, d))
-            mult(item, testtypename, dwriter, d)
+    fatdwriter = pool.map(partial(mult, testtypename=testtypename), files)
+    for dictionary in fatdwriter:
+        for key, value in dictionary.items():
+            dwriter[key]=value
+            # mult(item, testtypename, dwriter, d)
             # data = reader(item)
             # missingno = writer(data, testtypename, item)
             # d[missingno[0]]=missingno[1]
             # dwriter[missingno[0]] = missingno[2]
-        else:
-            print('Skipping file '+item+' due to empty .json file')
     # pool.close()
     # pool.join()
     dmisslist=genes(genelist, dwriter)
