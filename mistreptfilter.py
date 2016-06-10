@@ -52,7 +52,7 @@ def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outpath', default='/home/cintiq/PycharmProjects/misty/mistreport/')
     parser.add_argument('-n', '--outfile', default='refinedreport.json')
-    parser.add_argument('--marker', default='/home/cintiq/PycharmProjects/misty/marker')
+    parser.add_argument('--marker', default='/home/cintiq/PycharmProjects/misty/marker/', help='directory containing .markers file of interest')
     parser.add_argument('-T', '--testtypename', required=True)
     parser.add_argument('path')
     return parser.parse_args()

@@ -4,6 +4,7 @@
 import json
 import os
 import argparse
+import multiprocessing
 
 def pathfinder(outpath):
     '''makes a directory to store symlinked files'''
@@ -34,7 +35,11 @@ def acter(passlist, outpath, mistout, testtypename):
     '''does the symlinking based on the list of passed strains provided by the filter function'''
     for strain in passlist:
         if strain not in os.listdir(outpath):
-            os.symlink(os.path.join(mistout, strain)+'{}.json'.format(testtypename), outpath+strain)
+            os.symlink(os.path.abspath(os.path.join(mistout, strain)+'{}.json'.format(testtypename)), outpath+strain+'.json')
+
+def mult(misses, strain, threshhold, genomepasslist, outpath, mistout, testtypename):
+    filter(misses, strain, threshhold, genomepasslist)
+    acter(genomepasslist, outpath, mistout, testtypename)
 
 def arguments():
     parser = argparse.ArgumentParser()
@@ -42,21 +47,24 @@ def arguments():
     parser.add_argument('-thresh', '--threshhold', type=int, required=True)
     parser.add_argument('-t', '--testtypename', required=True)
     parser.add_argument('-m', '--mistout', default='/home/cintiq/PycharmProjects/misty/mistout/')
+    parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count())
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, threshhold, mistout, testtypename):
+def process(path, outpath, threshhold, mistout, testtypename, cores):
     pathfinder(outpath)
     data = reader(path)
     genomepasslist = []
     missingno = countergenes(data)
+    pool=multiprocessing.Pool(int(cores))
     for misses, strain in missingno:
-        filter(misses, strain, threshhold, genomepasslist)
-        acter(genomepasslist, outpath, mistout, testtypename)
+        pool.apply_async(mult, args=(misses, strain, threshhold, genomepasslist, outpath, mistout, testtypename))
+    pool.close()
+    pool.join()
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.threshhold, args.mistout, args.testtypename)
+    process(args.path, args.outpath, args.threshhold, args.mistout, args.testtypename, args.cores)
 
 if __name__ == '__main__':
     main()

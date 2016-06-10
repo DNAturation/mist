@@ -7,6 +7,7 @@ import json
 import glob
 import os
 import string
+import multiprocessing
 
 
 def pathfinder(outpath):
@@ -18,7 +19,7 @@ def fileget(path):
     return files
 
 def reader(files):
-    with open (files, 'r') as f:
+    with open(files) as f:
         data = json.load(f)
     return data
 
@@ -62,7 +63,7 @@ def JSONwriter(outpath, outfile, dwriter, dmisslist):
             with open(os.path.join(outpath, outfile+letter+'.json'), 'a') as f:
                 data = {'GenomesMissingGenes': dwriter, 'GenesMissingGenomes': dmisslist}
                 json.dump(data, f, indent=4, sort_keys=True)
-            return letter
+            return
 
 
 def genetotal(testtype):
@@ -74,7 +75,11 @@ def genetotal(testtype):
             genelist.append(data[x].split()[0])
         return genelist
 
-
+def mult(item, testtypename, dwriter, d):
+    data = reader(item)
+    missingno = writer(data, testtypename, item)
+    d[missingno[0]]=missingno[1]
+    dwriter[missingno[0]] = missingno[2]
 
 
 def arguments():
@@ -83,27 +88,35 @@ def arguments():
     parser.add_argument('--outfile', default='proteinsfailed')
     parser.add_argument('-t', '--testtype', required = True)
     parser.add_argument('-T', '--testtypename', required=True)
+    parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count())
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, outfile, testtype, testtypename):
+def process(path, outpath, outfile, testtype, testtypename, cores):
     pathfinder(outpath)
     files = fileget(path)
     dwriter = {}
     d = {}
     genelist = genetotal(testtype)
+    pool = multiprocessing.Pool(int(cores))
     for item in files:
-        data = reader(item)
-        missingno = writer(data, testtypename, item)
-        d[missingno[0]]=missingno[1]
-        dwriter[missingno[0]] = missingno[2]
+        if not os.stat(item).st_size == 0:
+            # pool.apply_async(mult, args=(item, testtypename, dwriter, d))
+            mult(item, testtypename, dwriter, d)
+            # data = reader(item)
+            # missingno = writer(data, testtypename, item)
+            # d[missingno[0]]=missingno[1]
+            # dwriter[missingno[0]] = missingno[2]
+        else:
+            print('Skipping file '+item+' due to empty .json file')
+    # pool.close()
+    # pool.join()
     dmisslist=genes(genelist, dwriter)
-    letty = JSONwriter(outpath, outfile, dwriter, dmisslist)
-    return letty
+    JSONwriter(outpath, outfile, dwriter, dmisslist)
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.outfile, args.testtype, args.testtypename)
+    process(args.path, args.outpath, args.outfile, args.testtype, args.testtypename, args.cores)
 
 
 if __name__ == '__main__':

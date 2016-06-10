@@ -27,14 +27,17 @@ def mistargs(fastalist, outpath, testtypename, testtype, alleles):
     for file in fastalist:
         strain, extension = os.path.splitext(os.path.basename(file))
         if not os.path.isfile(outpath+strain+testtypename+'.json'):
-            missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
-            # missed=('mist', '-b',
-                    '-j', outpath+strain+testtypename+'.json',
-                    '-a', alleles,
-                    '-t', testtype,
-                    '-T', outpath+'temp/'+strain+'/',
-                    file)
-            yield missed, strain
+            if not os.stat(file).st_size == 0:
+                # missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
+                missed=('mist', '-b',
+                        '-j', outpath+strain+testtypename+'.json',
+                        '-a', alleles,
+                        '-t', testtype,
+                        '-T', outpath+'temp/'+strain+'/',
+                        file)
+                yield missed, strain
+            else:
+                print('skipping strain '+strain+' due to .fasta file being an empty file')
         else:
             print('skipping strain '+strain+' due to .json file for this test already existing')
 
