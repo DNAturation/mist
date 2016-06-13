@@ -51,6 +51,25 @@ def genes(genelist, dwriter):
             dmisslist[genes].append(strain)
     return dmisslist
 
+def genetotal(testtype):
+    '''returns all genes in the .markers file'''
+    with open(testtype, 'r') as f:
+        data = f.readlines()
+        genelist = []
+        for x in range(1, len(data)):
+            genelist.append(data[x].split()[0])
+        return genelist
+
+def mult(item, testtypename):
+    '''generates a list of dictionaries that contain strains that a gene is missing from in parallel'''
+    dwriter = {}
+    if not os.stat(item).st_size == 0:
+        data = reader(item)
+        missingno = writer(data, testtypename, item)
+        dwriter[missingno[0]] = missingno[2]
+    else:
+        print('Skipping file '+item+' due to empty .json file')
+    return dwriter
 
 
 def JSONwriter(outpath, outfile, dwriter, dmisslist):
@@ -65,29 +84,6 @@ def JSONwriter(outpath, outfile, dwriter, dmisslist):
                 data = {'GenomesMissingGenes': dwriter, 'GenesMissingGenomes': dmisslist}
                 json.dump(data, f, indent=4, sort_keys=True)
             return
-
-
-def genetotal(testtype):
-    '''returns all genes in the .markers file'''
-    with open(testtype, 'r') as f:
-        data = f.readlines()
-        genelist = []
-        for x in range(1, len(data)):
-            genelist.append(data[x].split()[0])
-        return genelist
-
-def mult(item, testtypename):
-    '''generates a list of dictionaries that contain strains that a gene is missing from in parallel'''
-    dwriter = {}
-    # d = manager.dict({})
-    if not os.stat(item).st_size == 0:
-        data = reader(item)
-        missingno = writer(data, testtypename, item)
-        # d[missingno[0]]=missingno[1]
-        dwriter[missingno[0]] = missingno[2]
-    else:
-        print('Skipping file '+item+' due to empty .json file')
-    return dwriter
 
 def arguments():
     parser = argparse.ArgumentParser()
