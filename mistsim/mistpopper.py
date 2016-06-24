@@ -97,8 +97,9 @@ def process(path, outpath, outfile, startpop, endpop):
     pathfinder(outpath) #make output directory
 
     gmax = genemax(data)#obtains the maximum number of missing genomes from genes
-    if startpop > gmax: #if entered starting threshold is greater than the maximum number of missing genomes from a
-        startpop = gmax # gene, sets it to the maximum number of missing genomes
+    if startpop != None:
+        if startpop > gmax: #if entered starting threshold is greater than the maximum number of missing genomes from a
+            startpop = gmax # gene, sets it to the maximum number of missing genomes
 
     dgenome = setmaker(data) #stores temporary dictionary to pop things out of in the dgenome variable
     rankedlist=ranker(data, gmax, startpop, endpop) #ordered list of worst genes

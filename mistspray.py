@@ -33,6 +33,7 @@ def mistG(path, threshhold, testtype, testtypename, markerout):
     mistgenefilter.process(path, threshhold, testtype, testtypename, markerout)
 
 def mistR(path, outpath, outfile, marker, testtypename):
+    '''using the new markers file, removes genes that are no longer present from the report file'''
     mistreptfilter.process(path, outpath, outfile, marker, testtypename)
 
 

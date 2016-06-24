@@ -18,11 +18,11 @@ def glist(marker, testtypename):
     '''opens the new markers file'''
     with open(os.path.join(marker, testtypename)+'.markers', 'r') as f:
         genelist=[]
-        data = f.readlines()[1:]
-        data = [line.split()[0] for line in data]
-        if data != []:
-            for line in data:
-                genelist.append(line)
+        data = f.readlines()[1:]#skips the first header line and reads the data
+        data = [line.split()[0] for line in data] #gets the names only of genes from new markers file
+        if data != []: #skips empty names
+            for line in data: #takes the name out from the list
+                genelist.append(line) #adds names to genelist
     return genelist
 
 def gatherer(data, genelist):
@@ -31,14 +31,14 @@ def gatherer(data, genelist):
     GenesMissingGenomes={}
     GenomesMissingGenes={}
     for gene in data["GenesMissingGenomes"]:
-        if gene in genelist:
+        if gene in genelist: #checks if the name of the gene is in genelist, if so, adds it to the dictionary for the gene portion
             GenesMissingGenomes[gene] = data["GenesMissingGenomes"][gene]
     for genome in data["GenomesMissingGenes"]:
         GenomesMissingGenes[genome] = []
         for mgenes in data["GenomesMissingGenes"][genome]:
             if mgenes in genelist:
-                GenomesMissingGenes[genome].append(mgenes)
-    d['GenesMissingGenomes'] = GenesMissingGenomes
+                GenomesMissingGenes[genome].append(mgenes) #adds every gene present in the markers file to a particular genome
+    d['GenesMissingGenomes'] = GenesMissingGenomes#addes the two dictionaries into one larger dictionary for writing
     d['GenomesMissingGenes'] = GenomesMissingGenes
     return d
 

@@ -56,7 +56,7 @@ def process(path, outpath, threshhold, mistout, testtypename, cores):
     data = reader(path)
     genomepasslist = []
     missingno = countergenes(data)
-    pool=multiprocessing.Pool(int(cores))
+    pool=multiprocessing.Pool(int(cores)) #for running fasta symlinking in parallel
     for misses, strain in missingno:
         pool.apply_async(mult, args=(misses, strain, threshhold, genomepasslist, outpath, mistout, testtypename))
     pool.close()

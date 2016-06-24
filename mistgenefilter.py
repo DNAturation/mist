@@ -15,10 +15,10 @@ def reader(path):
     return data
 
 def countergenomes(data):
-    genelist = data['GenesMissingGenomes']
+    genelist = data['GenesMissingGenomes'] #gets a list of every gene in the report file and their missing genomes
     for gene in genelist:
-        missinggno = len(genelist[gene])
-        yield missinggno, gene
+        missinggno = len(genelist[gene])    #gets the number of genomes a gene is missing from,
+        yield missinggno, gene              #returns it along with the gene name
 
 def filter(missinggno, gene, threshhold, blacklist):
     '''determines which genes fail the cutoff, and appends them to a list that is created outside
@@ -28,16 +28,15 @@ def filter(missinggno, gene, threshhold, blacklist):
 
 def cull(blacklist, testtype, testtypename, markers):
     '''writes the new marker data out if they are not in the list of removed genes/genomes'''
-    with open(testtype, 'r') as ref:
-        with open(os.path.join(markers, testtypename)+'.markers', 'a+') as temp:
-            lines = ref.readlines()
+    with open(testtype, 'r') as ref: #open the original markers file
+        with open(os.path.join(markers, testtypename)+'.markers', 'a+') as temp: #opens the new markers file for writing
+            lines = ref.readlines() #prepares to write every line in original markers file to new markers file
             for line in lines:
-                if blacklist == []:
+                if blacklist == []: #if the blacklist contains no genes, write every line
                     temp.write(line)
-                if not any(gene in line for gene in blacklist):
-                    temp.write(line)
-
-
+                if not any(gene in line for gene in blacklist): #compares the name of the genes present in blacklist
+                    temp.write(line)                            #to the line to write, if not present in blacklist,
+                                                                #write the line
 
 
 def arguments():

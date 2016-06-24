@@ -77,8 +77,8 @@ def writergene(outpath, outfile, geneculld):
 
 def arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--genethreshhold', default=2000, type=int, help='maximum number within a gene of missing genomes tolerated before gene is removed')
-    parser.add_argument('--genomethreshhold', default=40, type=int, help='maximum number within a genome of missing genes tolerated before genome is removed')
+    parser.add_argument('--genethreshhold', default=None, type=int, help='maximum number within a gene of missing genomes tolerated before gene is removed')
+    parser.add_argument('--genomethreshhold', default=None, type=int, help='maximum number within a genome of missing genes tolerated before genome is removed')
     parser.add_argument('--genomemin', default=0, type=int, help='minimum number cutoff to start at for genome')
     parser.add_argument('--genemin', default=0, type=int, help='minimum number cutoff to start at for gene')
     parser.add_argument('--outfile', default='simulator.csv', help='name of file to be created')
@@ -97,10 +97,12 @@ def process(path, outpath, outfile, genemin, genethreshhold, genomemin, genometh
     maxes = gettotals(data) #get maxes of genomes and genes missing to serve as a starting point for threshold cutoffs
     genomemax=maxes[0]
     genemax=maxes[1]
-    if int(genethreshhold) > genemax:   #if input gene threshold is higher than the max missing genomes a gene has,
-        genethreshhold=genemax          #set it to the max
-    if int(genomethreshhold) > genomemax:   #if input genome threshold is higher than the max missing genes a genome has,
-        genomethreshhold=genomemax          #set it to the max
+    if genethreshhold != None:
+        if int(genethreshhold) > genemax:   #if input gene threshold is higher than the max missing genomes a gene has,
+            genethreshhold=genemax          #set it to the max
+    if genomethreshhold != None:
+        if int(genomethreshhold) > genomemax:   #if input genome threshold is higher than the max missing genes a genome has,
+            genomethreshhold=genomemax          #set it to the max
 
     currentcount=0 #counts number of iterations, and thus current threshold cutoff number
     leavingoff=0 #used to calculate where to begin again during switching to another writer due to genome or gene ending before the other
