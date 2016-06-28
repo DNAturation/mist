@@ -23,7 +23,7 @@ def popgraph(outpath, outpop, popgraph):
     subprocess.call(parg)
 
 def distance(corecalls, outpath, chopout, distout, cores):
-    durs=glob.glob(os.path.join(outpath, chopout)+'*')
+    durs=glob.glob(os.path.join(outpath, chopout)+'*/')
     if not os.access(os.path.join(outpath, distout), os.F_OK):
         os.mkdir(os.path.join(outpath, distout))
     pool=multiprocessing.Pool(cores)

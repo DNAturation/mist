@@ -2,17 +2,21 @@ library(ape)
 library(data.table)
 library(tools)
 library(gtools)
-library(gridExtra)
 source('wallace-helper.R')
 args<-commandArgs(trailingOnly=T)
 
-#1 = tables? .matrix extension
-#2 = outfile?
+#arg1 = tables .matrix extension
+#arg2 = outfile directory
+
+#gets the names of the saved files ready to be turned into matrices, and prepares them for future naming
 cutnames<-file_path_sans_ext(list.files(path=args[1], pattern='matrix.csv'))
 cutnames<-lapply(cutnames, function(x) gsub('matrix', '', x))
-cutnames<-sort(as.character(cutnames))
+cutnames<-as.character(cutnames)
+
+#gets the path of all the files
 files<-list.files(path=args[1], pattern='matrix.csv')
 pathtofiles<-paste(args[1], files, sep='')
+
 #clusterout<-paste(args[1], cutnames, '.cluster', sep='')
 #clusterout2<-paste(args[1], 'blargh', '.cluster', sep='')
 #dmats<-list()
@@ -20,28 +24,38 @@ pathtofiles<-paste(args[1], files, sep='')
 #    dtab<-read.table(files[i], header=T)
 #    dmats[i]<-dist.gene(dtab)
 #    }
+
+
 dm_from_matrixfile <- function(filepath) {
     dist.gene(read.table(filepath, header=T, row.names=1))
 }
+
+#function to load data into table format
 load_table <-function(filepath){
     read.table(filepath, header=T, row.names=1)
 }
+
+#function to turn tables into distance matrices
 dm_from_table<-function(tables){
     dist.gene(tables)
 }
+
+#function to run functions and generate clusters and cut the clusters
 process<-function(pathtofiles) {
     thetable<-lapply(pathtofiles, load_table)
-    distances<-lapply(thetable, dm_from_table)
+    distances<-lapply(thetable, dm_from_table) #order introduced onto table does not matter
     clusters <- lapply(distances, hclust)
     cuts <- lapply(clusters, function(x) cutree(x, h=0))
 return(cuts)
 }
 cuts<-process(pathtofiles)
+
+#creates graphs for each cluster
 for(i in 1:length(cutnames)){
-png(paste(args[2], cutnames[i], '.png'))
-#plot(cuts[[i]], main=cutnames[i], ylab='clusternumber')
-hist(cuts[[i]], main=cutnames[i])
-nothing<-dev.off()
+    png(cutnames[i])
+    plot(cuts[[i]], main=cutnames[i], ylab='clusternumber')
+#    hist(cuts[[i]], main=cutnames[i])
+    nothing<-dev.off()
 }
 ######
 #print('check2')
@@ -54,20 +68,23 @@ nothing<-dev.off()
 #n<-dev.off()
 #datable<-thetable[order(sapply(thetable,length), decreasing=T)]
 
-
+#sets each name of cut to call the corresponding cut
 cutnamer<-function(cutnames, cuts){for(i in 1:length(cutnames)){
     assign(cutnames[i], cuts[[i]], envir=.GlobalEnv)}
 }
 cutnamer(cutnames, cuts)
+
+#gets the name of all the strains. Only run on one cut due to all cuts having the same strains
 strains<-names(cuts[[1]])
+#adds the strain names into a data table
 x<-data.table(strains)
-#adds each column of the chop things and renames them to the proper name because without it they get labelled as 'i'
+#adds each column of the cut clusters and renames them to the proper name because without it they get labelled as 'i'
 for(i in cutnames){
     x$i<-(get(i))
     setnames(x, 'i', i)}
 
 
-permy<-as.data.table(combinations(3, 2, unlist(cutnames)))
+permy<-as.data.table(combinations(length(cutnames), 2, unlist(cutnames)))
 getwallace<-function(permy){
     for(i in 1:nrow(permy))
 {
