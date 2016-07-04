@@ -5,7 +5,7 @@ import os
 import argparse
 import multiprocessing
 
-def pathfinder(outpath, chopout, startchop):
+def pathfinder(outpath, chopout, startchop, rankedlist):
     '''creates output directory'''
     if not os.access(outpath, os.F_OK):
         os.mkdir(outpath)
@@ -13,8 +13,11 @@ def pathfinder(outpath, chopout, startchop):
         if not os.access(os.path.join(outpath, chopout), os.F_OK):
             os.mkdir(os.path.join(outpath, chopout))
         for start in startchop:
-            if not os.access(os.path.join(outpath, chopout, start)+'/', os.F_OK):
-                os.mkdir(os.path.join(outpath, chopout, start)+'/')
+            if int(start) < len(rankedlist):
+                if not os.access(os.path.join(outpath, chopout, start)+'/', os.F_OK):
+                    os.mkdir(os.path.join(outpath, chopout, start)+'/')
+            else:
+                break
     else:
         if not os.access(os.path.join(outpath, chopout), os.F_OK):
             os.mkdir(os.path.join(outpath, chopout))
@@ -89,8 +92,9 @@ def arguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('--outpath', default='./sim/')
     parser.add_argument('--outfile', default='chopped.csv')
-    parser.add_argument('--startpop', default=None, nargs='+')
-    parser.add_argument('--startchop', default=None)
+    parser.add_argument('--startpop', default=None)
+    parser.add_argument('--endpop', default=None)
+    parser.add_argument('--startchop', default=None, nargs='+')
     parser.add_argument('--endchop', default=None)
     parser.add_argument('--chopout', default='chopsyms/')
     parser.add_argument('--alleles', default='~/kye/autocreate/prissy/alleles/')
@@ -100,15 +104,19 @@ def arguments():
 
 
 def process(path, outpath, outfile, startpop, endpop, startchop, chopout, alleles, cores):
-    pathfinder(outpath, chopout, startchop)
     data = jreader(path)
     gmax = genemax(data)
     rankedlist= ranker(data, gmax, startpop, endpop)
+    pathfinder(outpath, chopout, startchop, rankedlist)
     if startchop:
         for start in startchop:
-            chopped=chopper(rankedlist, start)
-            symmer(chopped, outpath, chopout, alleles, cores, start)
-            writer(outpath, outfile, chopped, start)
+            if int(start) < len(rankedlist):
+                if not os.path.isfile(os.path.join(outpath, (str(start)+outfile))):
+                    chopped = chopper(rankedlist, start)
+                    symmer(chopped, outpath, chopout, alleles, cores, start)
+                    writer(outpath, outfile, chopped, start)
+            else:
+                break
 
     else:
         chopped = chopper(rankedlist, startchop)

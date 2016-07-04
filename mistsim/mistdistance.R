@@ -9,7 +9,7 @@ args<-commandArgs(trailingOnly=T)
 df<-read.csv(args[1])
 DT <- data.table(df)
 #colnames(DT)[names(DT)=='X'] <- 'Strain'
-passnames<-file_path_sans_ext(list.files(path=args[2], pattern='.fasta'))
+passnames<-file_path_sans_ext(list.files(paste(path=args[2], sep=''), pattern='.fasta')) #gene files
 DT2<-DT[, passnames, with=F]
 DT2<-cbind(DT2, DT[, .(Strain=X)])
 #DT2<-DT[, .(Strain=X), by=X]

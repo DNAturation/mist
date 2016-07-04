@@ -22,29 +22,18 @@ def popgraph(outpath, outpop, popgraph):
             outpath, outpop, popgraph)
     subprocess.call(parg)
 
-def distance(corecalls, outpath, chopout, distout, cores):
-    durs=glob.glob(os.path.join(outpath, chopout)+'*/')
-    if not os.access(os.path.join(outpath, distout), os.F_OK):
-        os.mkdir(os.path.join(outpath, distout))
-    pool=multiprocessing.Pool(cores)
-    for chops in durs:
-        darg = ('Rscript', 'mistdistance.R',
-                corecalls, outpath+chopout+os.path.basename(chops),
-                os.path.join(outpath, distout)+'chop'+os.path.basename(chops)+'matrix.csv')
-        # subprocess.call(darg)
-        pool.apply_async(subprocess.call(darg))
-    pool.close()
-    pool.join()
 
-def clusters(outpath, distout, outtree):
-    carg = ('Rscript', 'mistcluster.R',
-            os.path.join(outpath, distout), os.path.join(outpath, distout, outtree))
+def clusters(outpath, chopout, outcut, startchop, outfile, corecalls):
+    if not os.access(outcut, os.F_OK):
+        os.mkdir(outcut)
+    carg = ['Rscript', 'mistcluster.R', corecalls,
+            '--chopsyms', os.path.join(outpath, chopout),
+            '--chopped', outfile,
+            '--outpath', outpath,
+            '--outcuts', outcut,
+            '--startchops'] + startchop
     subprocess.call(carg)
 
-# def wallace(args):
-#     warg = ('python3', 'comparing_partitions.py',
-#             args)
-#     subprocess.call(warg)
 
 
 def arguments():
@@ -71,6 +60,7 @@ def arguments():
     b_parser.add_argument('--endpop', default=None, help='end cutoff of genes missing this many genomes')
     b_parser.add_argument('--startchop', default=None, nargs='+')
     b_parser.add_argument('--outfile', default='chopped.csv')
+    b_parser.add_argument('--outcut', default='cuts/')
     b_parser.add_argument('--chopout', default='chopsyms/')
     b_parser.add_argument('--alleles', default='/home/phac/kye/autocreate/prissy/alleles/')
 
@@ -93,13 +83,11 @@ def processSim(path, outpath, outfile, genemin, genethreshhold, genomemin, genom
     print('Graphing popped csv...')
     popgraph(outpath, outpop, poppedgraph)
 
-def processChop(path, outpath, outfile, startpop, endpop, startchop, chopout, alleles, distout, corecalls, outtree, cores):
+def processChop(path, outpath, outfile, outcut, startpop, endpop, startchop, chopout, alleles, distout, corecalls, outtree, cores):
     print('Chopping at given points')
     mistchoppop.process(path, outpath, outfile, startpop, endpop, startchop, chopout, alleles, cores)
-    print('creating distance tables...')
-    distance(corecalls, outpath, chopout, distout, cores)
     print('creating distance matrices and clustering genes...')
-    clusters(outpath, distout, outtree)
+    clusters(outpath, chopout, outcut, startchop, outfile, corecalls)
 
 def main():
     args = arguments()
@@ -108,7 +96,7 @@ def main():
                    args.genomemin, args.genomethreshhold, args.outgraph, args.outpop,
                    args.startpop, args.endpop, args.poppedgraph)
     if args.subfunction == 'Chop':
-        processChop(args.path, args.outpath, args.outfile, args.startpop, args.endpop,
+        processChop(args.path, args.outpath, args.outfile, args.outcut, args.startpop, args.endpop,
                     args.startchop, args.chopout, args.alleles, args.distout, args.corecalls, args.outtree, args.cores)
 
 if __name__ == '__main__':
