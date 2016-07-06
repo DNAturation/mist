@@ -1,4 +1,4 @@
-
+#creates chopped.csv files, which contain which genes remain after removing the x worst genes
 import csv
 import json
 import os
@@ -6,7 +6,7 @@ import argparse
 import multiprocessing
 
 def pathfinder(outpath, chopout, startchop, rankedlist):
-    '''creates output directory'''
+    '''creates output directory for symlinked genes after the chopping'''
     if not os.access(outpath, os.F_OK):
         os.mkdir(outpath)
     if startchop:
@@ -18,7 +18,7 @@ def pathfinder(outpath, chopout, startchop, rankedlist):
                     os.mkdir(os.path.join(outpath, chopout, start)+'/')
             else:
                 break
-    else:
+    else: #if no start point is given, defaults to creating just a 0, containing all genes
         if not os.access(os.path.join(outpath, chopout), os.F_OK):
             os.mkdir(os.path.join(outpath, chopout))
         if not os.access(os.path.join(outpath, chopout, '0'), os.F_OK):
@@ -54,6 +54,8 @@ def ranker(data, gmax, startpop, endpop):
 
 
 def chopper(rankedlist, startchop):
+    '''takes in the list of all genes (ranked from worst to best), and returns which genes are left given
+    how many genes to remove'''
     if startchop:
         chopped = rankedlist[int(startchop):]
         return chopped
@@ -62,6 +64,7 @@ def chopper(rankedlist, startchop):
         return chopped
 
 def symmer(chopped, outpath, chopout, alleles, cores, start):
+    '''does the symlinking of files in parallel'''
     if start:
         pool = multiprocessing.Pool(int(cores))
         for gene in chopped:
@@ -109,9 +112,11 @@ def process(path, outpath, outfile, startpop, endpop, startchop, chopout, allele
     rankedlist= ranker(data, gmax, startpop, endpop)
     pathfinder(outpath, chopout, startchop, rankedlist)
     if startchop:
-        for start in startchop:
-            if int(start) < len(rankedlist):
-                if not os.path.isfile(os.path.join(outpath, (str(start)+outfile))):
+        for start in startchop: #startchop is an nargs = + argument, so it's expecting a list with multiple start points
+            if int(start) < len(rankedlist):#incase the inputted starting points exceed the number of genes,
+                                            # this keeps it from looping more than necessary
+                if not os.path.isfile(os.path.join(outpath, (str(start)+outfile))): #prevents writing a new
+                                                                                    # one if one already exists
                     chopped = chopper(rankedlist, start)
                     symmer(chopped, outpath, chopout, alleles, cores, start)
                     writer(outpath, outfile, chopped, start)

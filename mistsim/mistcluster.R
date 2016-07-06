@@ -39,7 +39,9 @@ dm_from_table<-function(tables){
     dg(tables)
 }
 
+#grabs the corecalls file and stores it into memory
 corecalls<-data.table(read.csv(paste(args$corecalls)))
+#gets gene names in order of worst to best
 genes<-as.list(data.table(read.csv(paste(args$outpath, unlist(args$startchops)[1], args$chopped, sep='')))[, 1, with=F])
 names(genes)[1]<-unlist(args$startchops)[1]
 

@@ -65,6 +65,7 @@ def arguments():
     return parser.parse_args()
 
 def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, distoutfile, cores):
+    '''Runs MIST and creates a report file. Also updates alleles with new found alleles'''
     print('Running MIST...')
     mistM(path, outpath, testtypename, testtype, alleles, cores)
     print('Performing update...')
@@ -79,7 +80,9 @@ def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, dist
 
 def processREF(path, symlinkoutpath, genethreshhold, genomethreshhold, testtype,
                testtypename, markerout, outpath, reptoutpath, outfile, cores):
-
+    '''uses a user-defined threshold to decide which files pass. Files that pass are symlinked.
+    Makes a new markers file based on the genes that pass the threshold, and generates a new MIST report file
+    (simulating running MIST) based on the new markers file by removing all genes that are no longer in markers'''
     print('Symlinking passing fasta files...')
     mistF(path, symlinkoutpath, genethreshhold, outpath, testtypename, cores)
     print('Filtering genes...')
