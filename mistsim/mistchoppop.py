@@ -69,7 +69,7 @@ def symmer(chopped, outpath, chopout, alleles, cores, start):
         pool = multiprocessing.Pool(int(cores))
         for gene in chopped:
             if gene + '.fasta' not in os.listdir(os.path.join(outpath, chopout, start)+'/'):
-                pool.apply_async(os.symlink(os.path.join(alleles, gene)+'.fasta',
+                pool.apply_async(os.symlink, args=(os.path.join(alleles, gene)+'.fasta',
                                             os.path.join(outpath, chopout, start)+'/' + gene +'.fasta'))
         pool.close()
         pool.join()
@@ -77,7 +77,7 @@ def symmer(chopped, outpath, chopout, alleles, cores, start):
         pool = multiprocessing.Pool(int(cores))
         for gene in chopped:
             if gene + '.fasta' not in os.listdir(os.path.join(outpath, chopout, '0')):
-                pool.apply_async(os.symlink(os.path.join(alleles, gene)+'.fasta',
+                pool.apply_async(os.symlink, args=(os.path.join(alleles, gene)+'.fasta',
                                             os.path.join(outpath, chopout, '0', gene)+'.fasta'))
         pool.close()
         pool.join()
@@ -120,6 +120,8 @@ def process(path, outpath, outfile, startpop, endpop, startchop, chopout, allele
                     chopped = chopper(rankedlist, start)
                     symmer(chopped, outpath, chopout, alleles, cores, start)
                     writer(outpath, outfile, chopped, start)
+                else:
+                    print('Skipping ', str(start), 'due to file existing')
             else:
                 break
 

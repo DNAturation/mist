@@ -1,3 +1,6 @@
+#may need to add in something that compares arg startchop to how many files there are, as if the input is greater than
+#the number of files, it currently crashes, so exact numbers are required
+
 library(ape)
 library(data.table)
 library(tools)
@@ -23,6 +26,7 @@ parser$add_argument('--outcuts', type='character')
 parser$add_argument('--startchops', nargs='+')
 args<-parser$parse_args()
 
+
 dg<-cmpfun(dist.gene)
 
 dm_from_matrixfile <- function(filepath) {
@@ -35,6 +39,7 @@ load_table <-function(filepath){
 }
 
 #function to turn tables into distance matrices
+#nNOTE: this takes a long time to run, try to multicore it?
 dm_from_table<-function(tables){
     dg(tables)
 }
@@ -42,24 +47,48 @@ dm_from_table<-function(tables){
 #grabs the corecalls file and stores it into memory
 corecalls<-data.table(read.csv(paste(args$corecalls)))
 #gets gene names in order of worst to best
-genes<-as.list(data.table(read.csv(paste(args$outpath, unlist(args$startchops)[1], args$chopped, sep='')))[, 1, with=F])
+genes<-as.list(data.table(read.csv(paste(args$outpath, unlist(args$startchops)[1], args$chopped, sep=''), header=F))[, 1, with=F])
 names(genes)[1]<-unlist(args$startchops)[1]
-
-for (i in 2:length(unlist(args$startchops))){ ###can this be vectored instead of looped?
-    temp <- as.list(data.table(read.csv(paste(args$outpath, args$startchops[i], args$chopped, sep='')))[, 1, with=F])
+#gets set names of genes assigned to the cut they belong to
+for (i in 2:length(unlist(args$startchops))){ ###can this be vectored instead of looped? Opening a csv file, difficult
+    temp <- as.list(data.table(read.csv(paste(args$outpath, args$startchops[i], args$chopped, sep=''), header=F))[, 1, with=F])
     genes<-c(genes, temp)
     names(genes)[i]<-unlist(args$startchops[i])
 }
 
-#creates distance matrices, clusters them, and cuts the clusters with cutree. Also writes out the output of cutree,
-# which was used a bit for debugging with online tool. That line can be commented out if it creates too much clutter
-for (i in 1:length(genes)){
-    newDT<-corecalls[, unlist(genes[i]), with=F]
+
+#if (length(unlist(args$startchops)) == 2){###can this be vectored instead of looped?
+#    temp <- as.list(data.table(read.csv(paste(args$outpath, args$startchops[2], args$chopped, sep='')))[, 1, with=F])
+#    genes<-c(genes, temp)
+#    names(genes)[2]<-unlist(args$startchops[2])
+#    }
+#
+#if (length(unlist(args$startchops)) == 1){
+#    next}
+
+#assume get gene[i] = list of a bunch of genes
+clustermaker<-function(genelists, nameofgenes){
+    glist<-unlist(genelists)
+    newDT<-corecalls[, glist, with=F]
     distances<-dm_from_table(newDT)
     clusters<-hclust(distances)
-    assign(paste('cuts', names(genes)[i], sep=''), cutree(clusters, h=0))
-    write.table(get(paste('cuts', names(genes)[i], sep='')), paste(args$outcuts, 'cut', names(genes)[i], '.csv', sep=''))
+    assign(paste('cuts', nameofgenes, sep=''), cutree(clusters, h=0))
+    write.table(get(paste('cuts', nameofgenes, sep='')), paste(args$outcuts, 'cut', nameofgenes, '.csv', sep=''))
+    return(get(paste('cuts', nameofgenes, sep='')))
 }
+cutsmatrix<-mcmapply(clustermaker, genes, names(genes), mc.cores=60)
+
+
+
+#creates distance matrices, clusters them, and cuts the clusters with cutree. Also writes out the output of cutree,
+# which was used a bit for debugging with online tool. That line can be commented out if it creates too much clutter
+#for (i in 1:length(genes)){
+#    newDT<-corecalls[, unlist(genes[i]), with=F]
+#    distances<-dm_from_table(newDT)
+#    clusters<-hclust(distances)
+#    assign(paste('cuts', names(genes)[i], sep=''), cutree(clusters, h=0))
+#    write.table(get(paste('cuts', names(genes)[i], sep='')), paste(args$outcuts, 'cut', names(genes)[i], '.csv', sep=''))
+#}
 
 
 #gets the name of all the strains.
@@ -68,7 +97,7 @@ strains<-corecalls[, X]
 wallacetable<-data.table(strains)
 #adds each column of the cut clusters and renames them to the proper name because without it they get labelled as 'i'
 for(i in names(genes)){
-    wallacetable$i<-(get(paste('cuts', i, sep='')))
+    wallacetable$i<-cutsmatrix[, toString(i)]
     setnames(wallacetable, 'i', paste('cuts', i, sep=''))
     }
 
