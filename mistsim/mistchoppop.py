@@ -1,4 +1,4 @@
-#creates chopped.csv files, which contain which genes remain after removing the x worst genes
+#creates chopped.csv files, which contains which genes remain after removing the x worst genes
 import csv
 import json
 import os

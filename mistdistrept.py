@@ -28,10 +28,9 @@ def reader(files):
     return data
 
 
-def writer(data, testtypename, files):
-    '''previously wrote data to files (hence the name), now provides the strain name,
-    number of genes the genome does not have, and a list of genes that did not match for the genome
-    used as primary source of information for part1 of report'''
+def strainget(data, testtypename, files):
+    '''provides the strain name, number of genes the genome does not have, and a list of genes
+    that did not match for the genome used as primary source of information for part1 of report'''
     genes = data['Results'][0]['TestResults'][testtypename] #saves this section of the json
                                                             #into genes for easier future access
     genesmissing = 0
@@ -70,7 +69,7 @@ def mult(item, testtypename):
     dwriter = {}
     if not os.stat(item).st_size == 0: #skips empty json files
         data = reader(item)
-        missingno = writer(data, testtypename, item)
+        missingno = strainget(data, testtypename, item)
         dwriter[missingno[0]] = missingno[2] #returns dictionary of key strain name, value list of genes missing
     else:
         print('Skipping file '+item+' due to empty .json file')

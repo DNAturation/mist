@@ -1,5 +1,6 @@
-#may need to add in something that compares arg startchop to how many files there are, as if the input is greater than
-#the number of files, it currently crashes, so exact numbers are required
+#may need to add in something that compares arg startchop to how many files there are, as if the input is greater or
+# equal to the number of files, it currently crashes, so exact numbers are required (if greater, cannot find files. if
+#equal, calling dist.gene on the last set with nothing to compare to raises an error)
 
 library(ape)
 library(data.table)
@@ -78,17 +79,6 @@ clustermaker<-function(genelists, nameofgenes){
 }
 cutsmatrix<-mcmapply(clustermaker, genes, names(genes), mc.cores=60)
 
-
-
-#creates distance matrices, clusters them, and cuts the clusters with cutree. Also writes out the output of cutree,
-# which was used a bit for debugging with online tool. That line can be commented out if it creates too much clutter
-#for (i in 1:length(genes)){
-#    newDT<-corecalls[, unlist(genes[i]), with=F]
-#    distances<-dm_from_table(newDT)
-#    clusters<-hclust(distances)
-#    assign(paste('cuts', names(genes)[i], sep=''), cutree(clusters, h=0))
-#    write.table(get(paste('cuts', names(genes)[i], sep='')), paste(args$outcuts, 'cut', names(genes)[i], '.csv', sep=''))
-#}
 
 
 #gets the name of all the strains.
