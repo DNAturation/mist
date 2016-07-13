@@ -20,7 +20,8 @@ ref_clusters <- function(ref_calls, outdir) {
     hc <- hclust(d, "complete")
 
     # Cuts at all possible numbers of gene differences
-    clusts <- cutree(hc, h = unique(c(0, 0:ncol(ref_calls))))
+#    clusts <- cutree(hc, h = unique(c(0, 0:ncol(ref_calls))))
+    clusts<-cutree(hc, h=unique(c(0, 0:1)))
 
     reference_df <- data.frame(clusts[order(row.names(clusts)),],
                                stringsAsFactors = FALSE,
