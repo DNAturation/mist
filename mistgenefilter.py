@@ -3,6 +3,7 @@
 import argparse
 import os
 import json
+import csv
 
 def pathfinder(markers):
     if not os.access(markers, os.F_OK):
@@ -13,6 +14,14 @@ def reader(path):
     with open(path, 'r') as f:
         data = json.load(f)
     return data
+
+def testnamegetter(testtype):
+    with open(testtype, 'r') as f:
+        reader=csv.reader(f, delimiter='\t')
+        next(reader, None)
+        for x in reader:
+            testname=x[1]
+            return testname
 
 def countergenomes(data):
     genelist = data['GenesMissingGenomes'] #gets a list of every gene in the report file and their missing genomes
@@ -42,16 +51,16 @@ def cull(blacklist, testtype, testtypename, markers):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-thresh', '--threshhold', type=int, required=True, help='cutoff number for genomes that gene is not in')
-    parser.add_argument('-T', '--testtypename', required=True, help='type of test performed eg. MLST')
     parser.add_argument('-t', '--testtype', required=True, help='path to and name of test markers file')
     parser.add_argument('-markers', '--markersout', default='/home/cintiq/PycharmProjects/misty/markers/', help='markers folder to place new .marker in')
     parser.add_argument('path', help='report file')
     return parser.parse_args()
 
-def process(path, threshhold, testtype, testtypename, markers):
+def process(path, threshhold, testtype, markers):
     blacklist = []
     pathfinder(markers)
     data = reader(path)
+    testtypename = testnamegetter(testtype)
     x = countergenomes(data)
     for missinggno, gene in x:
         filter(missinggno, gene, threshhold, blacklist)
@@ -59,7 +68,7 @@ def process(path, threshhold, testtype, testtypename, markers):
 
 def main():
     args = arguments()
-    process(args.path, args.threshhold, args.testtype, args.testtypename, args.markerspout)
+    process(args.path, args.threshhold, args.testtype, args.markerspout)
 
 if __name__ == '__main__':
     main()

@@ -7,6 +7,7 @@ import glob
 import subprocess
 import multiprocessing
 import shutil
+import csv
 
 def getfasta(path):
     '''takes in multiple directories, returns a list of all fasta files within a directory, in a bigger list'''
@@ -23,6 +24,15 @@ def pathfinder(outpath):
         os.mkdir(outpath)
     if not os.access(outpath+'temp/', os.F_OK):
         os.mkdir(outpath+'temp/')
+
+def testnamegetter(testtype):
+    with open(testtype, 'r') as f:
+        reader=csv.reader(f, delimiter='\t')
+        next(reader, None)
+        for x in reader:
+            testname=x[1]
+            return testname
+
 
 
 def mistargs(fastalist, outpath, testtypename, testtype, alleles):
@@ -61,16 +71,16 @@ def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outpath', default='./mistout/')
     parser.add_argument('-a', '--alleles', default='alleles/')
-    parser.add_argument('-T', '--testtypename', required=True, help='name of test run')
     parser.add_argument('-t', '--testtype', required=True, help='path to and type of test/markers file, ex. CGF119')
     parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count(), help='number of cores to run on')
     parser.add_argument('path', nargs='+')
     return parser.parse_args()
 
 
-def process(path, outpath, testtypename, testtype, alleles, cores):
+def process(path, outpath, testtype, alleles, cores):
     listlist = getfasta(path)
     pool = multiprocessing.Pool(int(cores))
+    testtypename=testnamegetter(testtype)
     for fastalist in listlist:#goes through each individual list of fastas within the list of lists
         pathfinder(outpath)
         margs = mistargs(fastalist, outpath, testtypename, testtype, alleles)
@@ -82,7 +92,7 @@ def process(path, outpath, testtypename, testtype, alleles, cores):
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.testtypename, args.testtype, args.alleles, args.cores)
+    process(args.path, args.outpath, args.testtype, args.alleles, args.cores)
 
 if __name__ == '__main__':
     main()

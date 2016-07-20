@@ -11,30 +11,39 @@ import argparse
 import os
 import glob
 import multiprocessing
+import csv
 
-def mistM(path, outpath, testtypename, testtype, alleles, cores):
+def mistM(path, outpath, testtype, alleles, cores):
     '''runs mist'''
-    mistmain.process(path, outpath, testtypename, testtype, alleles, cores)
+    mistmain.process(path, outpath, testtype, alleles, cores)
 
 def mistF(path, fastaoutpath, threshhold, outpath, testtypename, cores):
     '''runs a userdefined threshold cutoff and symlinks fasta files that pass'''
     mistfastasym.process(path, fastaoutpath, threshhold, outpath, testtypename, cores)
 
-def mistD(path, outpath, outfile, testtype, testtypename, cores):
+def mistD(path, outpath, outfile, testtype, cores):
     '''generates a report'''
-    mistdistrept.process(path, outpath, outfile, testtype, testtypename, cores)
+    mistdistrept.process(path, outpath, outfile, testtype, cores)
 
 def mistU(alleles, jsons, testtypename):
     '''runs updater on mist main output, dillon's script'''
     update_definitions.process(alleles, jsons, testtypename)
 
-def mistG(path, threshhold, testtype, testtypename, markerout):
+def mistG(path, threshhold, testtype, markerout):
     '''makes a temporary .markers file based on genes that fall under a threshold of not being present in genomes'''
-    mistgenefilter.process(path, threshhold, testtype, testtypename, markerout)
+    mistgenefilter.process(path, threshhold, testtype, markerout)
 
 def mistR(path, outpath, outfile, marker, testtypename):
     '''using the new markers file, removes genes that are no longer present from the report file'''
     mistreptfilter.process(path, outpath, outfile, marker, testtypename)
+
+def testnamegetter(testtype):
+    with open(testtype, 'r') as f:
+        reader=csv.reader(f, delimiter='\t')
+        next(reader, None)
+        for x in reader:
+            testname=x[1]
+            return testname
 
 
 def arguments():
@@ -43,7 +52,6 @@ def arguments():
     a_parser = subparsers.add_parser('Generate')
     a_parser.add_argument('-o', '--outpath', default='/home/cintiq/PycharmProjects/misty/mistout/', help='output folder for json files from mist')
     a_parser.add_argument('-t', '--testtype', required=True, help='path to test markers file')
-    a_parser.add_argument('-T', '--testtypename', required=True, help='name of test, ex. CGF119')
     a_parser.add_argument('--distoutpath', default='./mistreport/', help='output folder for the report summary')
     a_parser.add_argument('--distoutfile', default='report', help='name of the report file')
     a_parser.add_argument('-a', '--alleles', default='/home/cintiq/Desktop/campylobacterjejuni/alleles/', help='folder that contains all allele files for mist requirements')
@@ -55,7 +63,6 @@ def arguments():
     b_parser.add_argument('--genomethreshhold', type=int, required=True, help='cutoff number for genomes that gene is not in')
     b_parser.add_argument('-s', '--symlinkoutpath', default='./mistpass/', help='folder to place fasta file symlinks for those that pass the threshold')
     b_parser.add_argument('-t', '--testtype', required=True, help='path to and name of test markers file eg. MLST.markers')
-    b_parser.add_argument('-T', '--testtypename', required=True, help='name of test to be performed eg. MLST')
     b_parser.add_argument('--markerout', default='/home/cintiq/PycharmProjects/misty/marker/', help='directory to place new marker in')
     b_parser.add_argument('--reptoutpath', default='./mistreport/', help='output folder for the report summary')
     b_parser.add_argument('--reptoutfile', default='refinedreport.json', help='name of the report file')
@@ -64,29 +71,31 @@ def arguments():
     b_parser.add_argument('path', help='path to report file')
     return parser.parse_args()
 
-def processGEN(path, outpath, testtype, testtypename, alleles, distoutpath, distoutfile, cores):
+def processGEN(path, outpath, testtype, alleles, distoutpath, distoutfile, cores):
     '''Runs MIST and creates a report file. Also updates alleles with new found alleles'''
     print('Running MIST...')
-    mistM(path, outpath, testtypename, testtype, alleles, cores)
+    mistM(path, outpath, testtype, alleles, cores)
     print('Performing update...')
     jsonlist = glob.glob(outpath+'*./json')
+    testtypename=testnamegetter(testtype)
     for json in jsonlist:
         mistU(alleles, json, testtypename)
     print('Making report...')
-    mistD(outpath, distoutpath, distoutfile, testtype, testtypename, cores)
+    mistD(outpath, distoutpath, distoutfile, testtype, cores)
     print('Generate has completed')
 
 
 
 def processREF(path, symlinkoutpath, genethreshhold, genomethreshhold, testtype,
-               testtypename, markerout, outpath, reptoutpath, outfile, cores):
+               markerout, outpath, reptoutpath, outfile, cores):
     '''uses a user-defined threshold to decide which files pass. Files that pass are symlinked.
     Makes a new markers file based on the genes that pass the threshold, and generates a new MIST report file
     (simulating running MIST) based on the new markers file by removing all genes that are no longer in markers'''
+    testtypename=testnamegetter(testtype)
     print('Symlinking passing fasta files...')
     mistF(path, symlinkoutpath, genethreshhold, outpath, testtypename, cores)
     print('Filtering genes...')
-    mistG(path, genomethreshhold, testtype, testtypename, markerout)
+    mistG(path, genomethreshhold, testtype, markerout)
     print('Revising report based on new genes...')
     mistR(path, reptoutpath, outfile, markerout, testtypename)
     print('Refine has completed')
@@ -97,11 +106,11 @@ def processREF(path, symlinkoutpath, genethreshhold, genomethreshhold, testtype,
 def main():
     args = arguments()
     if args.subfunction=='Generate':
-        processGEN(args.path, args.outpath, args.testtype, args.testtypename, args.alleles,
+        processGEN(args.path, args.outpath, args.testtype, args.alleles,
                    args.distoutpath, args.distoutfile, args.cores)
     if args.subfunction=='Refine':
         processREF(args.path, args.symlinkoutpath, args.genethreshhold, args.genomethreshhold,
-                   args.testtype, args.testtypename, args.markerout, args.outpath, args.reptoutpath,
+                   args.testtype, args.markerout, args.outpath, args.reptoutpath,
                    args.reptoutfile, args.cores)
 
 

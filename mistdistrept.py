@@ -9,7 +9,7 @@ import os
 import string
 import multiprocessing
 from functools import partial
-
+import csv
 
 def pathfinder(outpath):
     '''makes directory for report file'''
@@ -42,7 +42,13 @@ def strainget(data, testtypename, files):
             #returns strain name, number of genes missing, and the list of gene names missing
     return os.path.splitext(os.path.basename(files))[0][:-len(testtypename)], genesmissing, genelist
 
-
+def testnamegetter(testtype):
+    with open(testtype, 'r') as f:
+        reader=csv.reader(f, delimiter='\t')
+        next(reader, None)
+        for x in reader:
+            testname=x[1]
+            return testname
 
 def genes(genelist, dwriter):
     '''takes in a list of all genes that have misses and a dictionary of k=strain v=list of missing genes,
@@ -92,17 +98,18 @@ def JSONwriter(outpath, outfile, dwriter, dmisslist):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outpath', default='./mistfail/')
-    parser.add_argument('--outfile', default='proteinsfailed')
+    parser.add_argument('--outfile', default='report')
     parser.add_argument('-t', '--testtype', required = True)
     parser.add_argument('-T', '--testtypename', required=True)
     parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count())
     parser.add_argument('path')
     return parser.parse_args()
 
-def process(path, outpath, outfile, testtype, testtypename, cores):
+def process(path, outpath, outfile, testtype, cores):
     pool = multiprocessing.Pool(int(cores))
     pathfinder(outpath)
     files = fileget(path)
+    testtypename=testnamegetter(testtype)
     dwriter={}
     genelist = genetotal(testtype)
     fatdwriter = pool.map(partial(mult, testtypename=testtypename), files) #saves into a two levelled list in parallel
@@ -114,7 +121,7 @@ def process(path, outpath, outfile, testtype, testtypename, cores):
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.outfile, args.testtype, args.testtypename, args.cores)
+    process(args.path, args.outpath, args.outfile, args.testtype, args.cores)
 
 
 if __name__ == '__main__':
