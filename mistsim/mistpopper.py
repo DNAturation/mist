@@ -5,25 +5,35 @@ import os
 import argparse
 
 def pathfinder(outpath):
-    '''creates output directory'''
+    '''
+    creates output directory
+    '''
     if not os.access(outpath, os.F_OK):
         os.mkdir(outpath)
 
 
 def jreader(path):
-    '''opens report.json file, used for the basis of looking up missing genes from genomes and how bad a gene is'''
+    '''
+    opens report.json file, used for the basis of looking up missing genes
+    from genomes and how bad a gene is
+    '''
     with open(path, 'r') as f:
         data = json.load(f)
     return data
 
 def genemax(data):
-    '''finds the maximum number of genomes missing from a gene, serves as start point for the threshold cut down'''
+    '''
+    finds the maximum number of genomes missing from a gene,
+    serves as start point for the threshold cut down
+    '''
     genemax=max([len(data["GenesMissingGenomes"][x]) for x in data["GenesMissingGenomes"]])
     return genemax
 
 def setmaker(data):
-    '''makes a dictionary of key = genomes, value = set of missing genes, from which the values will be popped
-    in order to obtain pure genomes'''
+    '''
+    makes a dictionary of key = genomes, value = set of missing genes, from which the values will be popped
+    in order to obtain pure genomes
+    '''
     dgenome = {}
     for genome in data["GenomesMissingGenes"]: #access the names of genomes in the report.json file
         dgenome[genome]=set(data["GenomesMissingGenes"][genome])    #create new dictionary of key genome name,
@@ -32,8 +42,10 @@ def setmaker(data):
     return dgenome
 
 def ranker(data, gmax, startpop, endpop):
-    '''organizes the genes present into a descending list based on the number of genes they are missing (most missing
-    are the first ones)'''
+    '''
+    organizes the genes present into a descending list based on the number of genes they are missing (most missing
+    are the first ones)
+    '''
     rankedlist = []
     for thresh in range(gmax+1)[startpop:endpop:-1]:#iterates through a number(thresh = threshold) from highest (default gmax)
                                                     # to lowest (Default 0) in order to determine which genes to take out
@@ -49,8 +61,10 @@ def ranker(data, gmax, startpop, endpop):
     return rankedlist
 
 def writelister(rankedlist, dgenome):
-    '''makes a list, with the number of genes removed and the number of genomes without missing genes, to be written
-    to csv file'''
+    '''
+    makes a list, with the number of genes removed and the number of genomes without missing genes, to be written
+    to csv file
+    '''
     writelist = []
     for index, gene in enumerate(rankedlist): #iterates through the ordered list of the worst genes
         puregenomes=0   #resets 'puregenomes' count every iteration of a new gene
@@ -71,7 +85,9 @@ def writelister(rankedlist, dgenome):
 
 
 def writer(outpath, outfile, writelist):
-    '''writes to csv file the number of genes removed and the number of genomes that contain all remaining genes'''
+    '''
+    writes to csv file the number of genes removed and the number of genomes that contain all remaining genes
+    '''
     with open(os.path.join(outpath, outfile), 'a') as f:
         csvwriter = csv.writer(f, delimiter=' ')
         csvwriter.writerow(writelist)

@@ -6,18 +6,24 @@ import os
 import argparse
 
 def pathfinder(outpath):
-    '''makes output directory'''
+    '''
+    makes output directory
+    '''
     if not os.access(outpath, os.F_OK):
         os.mkdir(outpath)
 
 def reader(path):
-    '''reads report.json file'''
+    '''
+    reads report.json file
+    '''
     with open(path, 'r') as f:
         data = json.load(f)
     return data
 
 def gettotals(data):
-    '''returns max amounts of genes and genomes missing, serves as an end point for analysis'''
+    '''
+    returns max amounts of genes and genomes missing, serves as an end point for analysis
+    '''
     genomemax=max([len(data["GenomesMissingGenes"][x]) for x in data["GenomesMissingGenes"]])
     genemax=max([len(data["GenesMissingGenomes"][x]) for x in data["GenesMissingGenomes"]])
 
@@ -27,7 +33,9 @@ def gettotals(data):
 
 
 def genecull(genethresh, data):
-    '''creates a dictionary of the current cutoff threshold and number of passing genes'''
+    '''
+    creates a dictionary of the current cutoff threshold and number of passing genes
+    '''
     gened={}
     gened[genethresh]=0
     for genes in data['GenesMissingGenomes']: #iterate through gene names in the report file
@@ -37,7 +45,9 @@ def genecull(genethresh, data):
 
 
 def genomecull(genomethresh, data):
-    '''generates dictionary of the current cutoff threshold and number of passing genomes'''
+    '''
+    generates dictionary of the current cutoff threshold and number of passing genomes
+    '''
     genomed={}
     genomed[genomethresh]=0
     for genomes in data['GenomesMissingGenes']: #iterate through genome names in the report file
@@ -47,27 +57,37 @@ def genomecull(genomethresh, data):
 
 
 def header(outpath, outfile):
-    '''makes the csv file and writes the headers to it'''
+    '''
+    makes the csv file and writes the headers to it
+    '''
     with open(os.path.join(outpath, outfile), 'w', newline='') as f:
         csvwriter = csv.writer(f, delimiter=' ')
         csvwriter.writerow(['GenomeThreshold', 'GenomesLeft', '', 'GeneThreshold', 'GenesLeft'])
 
 def writer(outpath, outfile, genomeculld, geneculld):
-    '''writes both genes and genomes, their cutoffs and number of passing genes/genomes'''
+    '''
+    writes both genes and genomes, their cutoffs and number of passing genes/genomes
+    '''
     with open(os.path.join(outpath, outfile), 'a', newline='') as f:
         csvwriter = csv.writer(f, delimiter=' ')
         for (genomek, genomev), (genek, genev) in zip(sorted(genomeculld.items()), sorted(geneculld.items())): #iterates through both dictionaries
             csvwriter.writerow([genomek, genomev, '', genek, genev])
 
 def writergenome(outpath, outfile, genomeculld):
-    '''writes number of passing genomes and their cutoffs. Used when there are more genomes than genes(genes run out before genomes)'''
+    '''
+    writes number of passing genomes and their cutoffs. Used when there are more
+    genomes than genes(genes run out before genomes)
+    '''
     with open(os.path.join(outpath, outfile), 'a', newline='') as f:
         csvwriter = csv.writer(f, delimiter=' ')
         for (genomek, genomev) in sorted(genomeculld.items()): #iterates only through the genome dictionary
             csvwriter.writerow([genomek, genomev])
 
 def writergene(outpath, outfile, geneculld):
-    '''writes number of passing genomes and their cutoffs. Used when there are more genes than genomes(genomes run out before genes)'''
+    '''
+    writes number of passing genomes and their cutoffs. Used when there are more
+    genes than genomes(genomes run out before genes)
+    '''
     with open(os.path.join(outpath, outfile), 'a', newline='') as f:
         csvwriter = csv.writer(f, delimiter=' ')
         for (genek, genev) in sorted(geneculld.items()): #iterates only through the gene dictionary
@@ -114,7 +134,7 @@ def process(path, outpath, outfile, genemin, genethreshhold, genomemin, genometh
                                                                                                                 #the second threshold may be unnecessary
 
             if x+1 == genomethreshhold and x+1 != genethreshhold: #reaches max missing of genomes but genes continue
-                '''switch to genome writer'''
+                #switch to genome writer
                 geneculld=genecull(currentcount, data) #sets dict variable to a single length dictionary of key threshold
                 genomeculld=genomecull(currentcount, data) #and value number of passing genes/genomes
                 writer(outpath, outfile, genomeculld, geneculld) #writes to csv file from information in the dictionaries
@@ -125,7 +145,7 @@ def process(path, outpath, outfile, genemin, genethreshhold, genomemin, genometh
                 break
 
             elif x+1 == genethreshhold and x+1 != genomethreshhold: #reaches max missing of genes but genomes continue
-                '''switch to gene writer'''
+                #switch to gene writer
                 geneculld=genecull(currentcount, data) #same as above, but specifies genome flag instead of gene
                 genomeculld=genomecull(currentcount, data)
                 writer(outpath, outfile, genomeculld, geneculld)
@@ -136,14 +156,14 @@ def process(path, outpath, outfile, genemin, genethreshhold, genomemin, genometh
                 break
 
             elif x+1 == genethreshhold and x+1 == genomethreshhold:
-                '''when both conclude at same time, end'''
+                #when both conclude at same time, end
                 geneculld=genecull(currentcount, data)
                 genomeculld=genomecull(currentcount, data)
                 writer(outpath, outfile, genomeculld, geneculld)
                 return
 
             else:
-                '''an end has not been reached, continue the loop'''
+                #an end has not been reached, continue the loop
                 geneculld=genecull(currentcount, data)
                 genomeculld=genomecull(currentcount, data)
                 writer(outpath, outfile, genomeculld, geneculld)
