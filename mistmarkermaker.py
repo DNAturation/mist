@@ -47,11 +47,12 @@ def jsonwriter(d, outpath, testname):
 
 
 def filechecker(file):
+    # extra optional thing, checks the fasta files for non-nucleotides and gives warnings if found
     with open (file, 'r') as f:
         for record in SeqIO.parse(f, 'fasta'):
-            nonNT = re.findall('[^ACTG-]+', str(record.seq))
+            nonNT = re.findall('[^NACTG-]+', str(record.seq))
             for mismatch in nonNT:
-                print("Warning, non-DNA nucleotide '"+mismatch+"' found in "+file)
+                print("Warning: non-DNA nucleotide '"+mismatch+"' found in "+file)
 
 
 def arguments():
