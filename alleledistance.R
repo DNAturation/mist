@@ -21,4 +21,4 @@ jsonloader<-function(jsonfile)
 
 
 thetable<-jsonloader(args$jsonfile)
-write.table(thetable, args$outfile, row.names=FALSE)
+write.table(thetable, args$outfile, na = '', row.names=FALSE)

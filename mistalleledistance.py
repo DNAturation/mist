@@ -1,6 +1,8 @@
 # takes in a directory of MIST output files (jsons) and creates a distance calculation of the alleles.
 # If two strains have similar alleles, their numbers (intersection point on CSV file) are lower. Counts similarity
 # by checking which allele MIST matched each read with; different alleles increase the score
+# Note that this script assigns 'NA' values when a match for a gene could not be found, and these values
+# contribute to the score (matching with other NA's).
 import json
 import argparse
 import os
@@ -62,7 +64,7 @@ def compare(genedic, genedic2):
 def csvwriter(dmat, outfile):
     # outsources the prettyifying of the dictionary into a table to an R script, alleledistance.R. Creates a
     # temporary json file for the R script, and deletes it after use
-    tf = tempfile.NamedTemporaryFile()
+    object, tf = tempfile.mkstemp()
     with open(tf, 'w') as f:
         json.dump(dmat, f, indent=4, sort_keys=True)
     distargs = ('Rscript', 'alleledistance.R',
