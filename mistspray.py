@@ -7,11 +7,14 @@ import mistdistrept
 import update_definitions
 import mistgenefilter
 import mistreptfilter
+import mistalleledistance
 import argparse
 import os
 import glob
 import multiprocessing
 import csv
+import json
+import re
 
 def mistM(path, outpath, testtype, alleles, cores):
     '''runs mist'''
@@ -37,13 +40,25 @@ def mistR(path, outpath, outfile, marker, testtypename):
     '''using the new markers file, removes genes that are no longer present from the report file'''
     mistreptfilter.process(path, outpath, outfile, marker, testtypename)
 
+def mistA(path, outpath, outfile, stout):
+    '''generates a small report on how different the strains are based on which alleles were matched in MIST'''
+    mistalleledistance.process(path, outpath, outfile, stout)
+
 def testnamegetter(testtype):
     with open(testtype, 'r') as f:
-        reader=csv.reader(f, delimiter='\t')
-        next(reader, None)
-        for x in reader:
-            testname=x[1]
-            return testname
+        try: #try accessing markers file as .json file first
+            data = json.load(f)
+            for genome, keys in data.items():
+                for key in keys:
+                    if re.match('T(est)?\.?[-\._ ]?Name.*', key, flags=re.IGNORECASE):
+                        return keys[key]
+
+        except KeyError: #if access as .json file fails, try to access as csv file
+            reader=csv.reader(f, delimiter='\t')
+            next(reader, None)
+            for x in reader:
+                testname=x[1]
+                return testname
 
 
 def arguments():
@@ -54,9 +69,12 @@ def arguments():
     a_parser.add_argument('-t', '--testtype', required=True, help='path to test markers file')
     a_parser.add_argument('--distoutpath', default='./mistreport/', help='output folder for the report summary')
     a_parser.add_argument('--distoutfile', default='report', help='name of the report file')
-    a_parser.add_argument('-a', '--alleles', default='/home/cintiq/Desktop/campylobacterjejuni/alleles/', help='folder that contains all allele files for mist requirements')
+    a_parser.add_argument('-a', '--alleles', required=True, help='folder that contains all allele files for mist requirements')
     a_parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count(), help='number of cores to run')
-    a_parser.add_argument('path', nargs='+', help='fasta files to run mist on')
+    a_parser.add_argument('--seqtyp', default='ST.csv')
+    a_parser.add_argument('--distanceout', default='alleledistance.csv')
+
+    a_parser.add_argument('path', nargs='+', help='directories of fasta files to run mist on')
 
     b_parser = subparsers.add_parser('Refine')
     b_parser.add_argument('--genethreshhold', type=int, required=True, help='maximum amount of missed genes tolerated to allow a strain to pass')
@@ -71,7 +89,7 @@ def arguments():
     b_parser.add_argument('path', help='path to report file')
     return parser.parse_args()
 
-def processGEN(path, outpath, testtype, alleles, distoutpath, distoutfile, cores):
+def processGEN(path, outpath, testtype, alleles, distoutpath, distoutfile, distanceout, seqtyp, cores):
     '''Runs MIST and creates a report file. Also updates alleles with new found alleles'''
     print('Running MIST...')
     mistM(path, outpath, testtype, alleles, cores)
@@ -82,15 +100,17 @@ def processGEN(path, outpath, testtype, alleles, distoutpath, distoutfile, cores
         mistU(alleles, json, testtypename)
     print('Making report...')
     mistD(outpath, distoutpath, distoutfile, testtype, cores)
+    mistA(outpath, distoutpath, distanceout, seqtyp)
     print('Generate has completed')
-
 
 
 def processREF(path, symlinkoutpath, genethreshhold, genomethreshhold, testtype,
                markerout, outpath, reptoutpath, outfile, cores):
-    '''uses a user-defined threshold to decide which files pass. Files that pass are symlinked.
+    '''
+    uses a user-defined threshold to decide which files pass. Files that pass are symlinked.
     Makes a new markers file based on the genes that pass the threshold, and generates a new MIST report file
-    (simulating running MIST) based on the new markers file by removing all genes that are no longer in markers'''
+    (simulating running MIST) based on the new markers file by removing all genes that are no longer in markers
+    '''
     testtypename=testnamegetter(testtype)
     print('Symlinking passing fasta files...')
     mistF(path, symlinkoutpath, genethreshhold, outpath, testtypename, cores)
@@ -101,19 +121,15 @@ def processREF(path, symlinkoutpath, genethreshhold, genomethreshhold, testtype,
     print('Refine has completed')
 
 
-
-
 def main():
     args = arguments()
-    if args.subfunction=='Generate':
+    if args.subfunction == 'Generate':
         processGEN(args.path, args.outpath, args.testtype, args.alleles,
-                   args.distoutpath, args.distoutfile, args.cores)
-    if args.subfunction=='Refine':
+                   args.distoutpath, args.distoutfile, args.distanceout, args.seqtyp, args.cores)
+    if args.subfunction == 'Refine':
         processREF(args.path, args.symlinkoutpath, args.genethreshhold, args.genomethreshhold,
                    args.testtype, args.markerout, args.outpath, args.reptoutpath,
                    args.reptoutfile, args.cores)
-
-
 
 
 if __name__ == '__main__':

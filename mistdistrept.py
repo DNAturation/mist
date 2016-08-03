@@ -10,6 +10,7 @@ import string
 import multiprocessing
 from functools import partial
 import csv
+import re
 
 def pathfinder(outpath):
     '''makes directory for report file'''
@@ -43,12 +44,21 @@ def strainget(data, testtypename, files):
     return os.path.splitext(os.path.basename(files))[0][:-len(testtypename)], genesmissing, genelist
 
 def testnamegetter(testtype):
+    '''retrieves the name of the test directly from markers file'''
     with open(testtype, 'r') as f:
-        reader=csv.reader(f, delimiter='\t')
-        next(reader, None)
-        for x in reader:
-            testname=x[1]
-            return testname
+        try: #try accessing markers file as .json file first
+            data = json.load(f)
+            for genome, keys in data.items():
+                for key in keys:
+                    if re.match('T(est)?\.?[-\._ ]?Name.*', key, flags=re.IGNORECASE):
+                        return keys[key]
+
+        except KeyError: #if access as .json file fails, try to access as csv file
+            reader=csv.reader(f, delimiter='\t')
+            next(reader, None)
+            for x in reader:
+                testname=x[1]
+                return testname
 
 def genes(genelist, dwriter):
     '''takes in a list of all genes that have misses and a dictionary of k=strain v=list of missing genes,
@@ -100,7 +110,7 @@ def arguments():
     parser.add_argument('--outpath', default='./mistfail/')
     parser.add_argument('--outfile', default='report')
     parser.add_argument('-t', '--testtype', required = True)
-    parser.add_argument('-T', '--testtypename', required=True)
+    # parser.add_argument('-T', '--testtypename', required=True)
     parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count())
     parser.add_argument('path')
     return parser.parse_args()

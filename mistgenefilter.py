@@ -4,6 +4,7 @@ import argparse
 import os
 import json
 import csv
+import re
 
 def pathfinder(markers):
     if not os.access(markers, os.F_OK):
@@ -17,11 +18,19 @@ def reader(path):
 
 def testnamegetter(testtype):
     with open(testtype, 'r') as f:
-        reader=csv.reader(f, delimiter='\t')
-        next(reader, None)
-        for x in reader:
-            testname=x[1]
-            return testname
+        try: #try accessing markers file as .json file first
+            data = json.load(f)
+            for genome, keys in data.items():
+                for key in keys:
+                    if re.match('T(est)?\.?[-\._ ]?Name.*', key, flags=re.IGNORECASE):
+                        return keys[key]
+
+        except KeyError: #if access as .json file fails, try to access as csv file
+            reader=csv.reader(f, delimiter='\t')
+            next(reader, None)
+            for x in reader:
+                testname=x[1]
+                return testname
 
 def countergenomes(data):
     genelist = data['GenesMissingGenomes'] #gets a list of every gene in the report file and their missing genomes
