@@ -26,6 +26,7 @@ def testnamegetter(testtype):
                         return keys[key]
 
         except KeyError: #if access as .json file fails, try to access as csv file
+            f.seek(0)
             reader=csv.reader(f, delimiter='\t')
             next(reader, None)
             for x in reader:
@@ -39,22 +40,34 @@ def countergenomes(data):
         yield missinggno, gene              #returns it along with the gene name
 
 def filter(missinggno, gene, threshhold, blacklist):
-    '''determines which genes fail the cutoff, and appends them to a list that is created outside
-    this function within the process function'''
+    '''
+    determines which genes fail the cutoff, and appends them to a list that is created outside
+    this function within the process function
+    '''
     if missinggno > threshhold:
         blacklist.append(gene)
 
 def cull(blacklist, testtype, testtypename, markers):
     '''writes the new marker data out if they are not in the list of removed genes/genomes'''
-    with open(testtype, 'r') as ref: #open the original markers file
-        with open(os.path.join(markers, testtypename)+'.markers', 'a+') as temp: #opens the new markers file for writing
-            lines = ref.readlines() #prepares to write every line in original markers file to new markers file
-            for line in lines:
-                if blacklist == []: #if the blacklist contains no genes, write every line
-                    temp.write(line)
-                if not any(gene in line for gene in blacklist): #compares the name of the genes present in blacklist
-                    temp.write(line)                            #to the line to write, if not present in blacklist,
-                                                                #write the line
+    with open(testtype, 'r') as ref:  # open the original markers file
+        with open(os.path.join(markers, testtypename)+'.markers', 'w') as temp:  # opens the new markers file for writing
+            try:  # try loading the markers file as a json
+                file = json.load(ref)
+                tempd = {}
+                for gene, geneinfo in file.items():  # loops through the gene name and other marker information
+                    if gene not in blacklist:  # check to see if the gene passed, if so then adds it to the dictionary
+                        tempd[gene] = geneinfo
+                json.dump(tempd, temp)
+
+            except ValueError: # use original csv style if .json form fails
+                ref.seek(0)
+                lines = ref.readlines() #prepares to write every line in original markers file to new markers file
+                for line in lines:
+                    if blacklist == []: #if the blacklist contains no genes, write every line
+                        temp.write(line)
+                    elif not any(gene in line for gene in blacklist): #compares the name of the genes present in blacklist
+                        temp.write(line)                              #to the line to write, if not present in blacklist,
+                                                                      #write the line
 
 
 def arguments():

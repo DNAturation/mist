@@ -47,7 +47,8 @@ def jsonwriter(d, outpath, testname):
 
 
 def filechecker(file):
-    # extra optional thing, checks the fasta files for non-nucleotides and gives warnings if found
+    # extra optional thing, checks the fasta files that the marker file is being made from
+    # for non-nucleotides and gives warnings if found
     with open (file, 'r') as f:
         for record in SeqIO.parse(f, 'fasta'):
             nonNT = re.findall('[^NACTG-]+', str(record.seq))
@@ -56,6 +57,8 @@ def filechecker(file):
 
 
 def arguments():
+    # Note that the majority of these arguments for the markers file was copied off existing ones; I'm not
+    # too certain what the significance of each object is
     parser = argparse.ArgumentParser()
     parser.add_argument('--testname', required=True)
     parser.add_argument('--testtype', default='1')

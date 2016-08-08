@@ -31,7 +31,7 @@ def filter(missingno, strain, threshhold, passlist):
     if missingno <= threshhold:
         passlist.append(strain)
 
-def acter(passlist, outpath, mistout, testtypename):
+def symlinker(passlist, outpath, mistout, testtypename):
     '''does the symlinking based on the list of passed strains provided by the filter function'''
     for strain in passlist:
         if strain not in os.listdir(outpath):
@@ -39,14 +39,14 @@ def acter(passlist, outpath, mistout, testtypename):
 
 def mult(misses, strain, threshhold, genomepasslist, outpath, mistout, testtypename):
     filter(misses, strain, threshhold, genomepasslist)
-    acter(genomepasslist, outpath, mistout, testtypename)
+    symlinker(genomepasslist, outpath, mistout, testtypename)
 
 def arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--outpath', default='./passed/')
-    parser.add_argument('-thresh', '--threshhold', type=int, required=True)
-    parser.add_argument('-t', '--testtypename', required=True)
-    parser.add_argument('-m', '--mistout', default='/home/cintiq/PycharmProjects/misty/mistout/')
+    parser.add_argument('-o', '--outpath', default='./fastasym/', help='output directory for the symlinked fastas')
+    parser.add_argument('-thresh', '--threshhold', type=int, required=True, help='max number of genes a genome can be missing to still be symlinked')
+    parser.add_argument('-t', '--testtypename', required=True, help='name of the test run, can be found through markers file')
+    parser.add_argument('-m', '--mistout', default='/home/cintiq/PycharmProjects/misty/mistout/', help='directory to the output jsons of MIST')
     parser.add_argument('-c', '--cores', default=multiprocessing.cpu_count())
     parser.add_argument('path')
     return parser.parse_args()

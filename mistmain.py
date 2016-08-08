@@ -1,4 +1,5 @@
-#takes in a list of fasta files from spades (maybe quast) and runs blast on them,
+# runs the MIST main program. Shell for this is called mistspray.py
+# takes in a list of fasta files from spades (maybe quast) and runs blast on them,
 # identifying the strains they came from (MLST)
 
 import argparse
@@ -14,9 +15,10 @@ import re
 def getfasta(path):
     '''takes in multiple directories, returns a list of all fasta files within a directory, in a bigger list'''
     fastalist = []
-    for direc in path:
-        file = glob.glob(direc+'*.fasta')
-        fastalist.append(file)
+    for direc in path:  # path is a list due to nargs+ argument
+        files = glob.glob(os.path.join(direc, '*.fasta'))
+        for file in files:
+            fastalist.append(file)
     return fastalist
 
 
@@ -36,7 +38,8 @@ def testnamegetter(testtype):
                     if re.match('T(est)?\.?[-\._ ]?Name.*', key, flags=re.IGNORECASE):
                         return keys[key]
 
-        except KeyError: #if access as .json file fails, try to access as csv file
+        except ValueError: #if access as .json file fails, try to access as csv file
+            f.seek(0)
             reader=csv.reader(f, delimiter='\t')
             next(reader, None)
             for x in reader:
@@ -51,8 +54,8 @@ def mistargs(fastalist, outpath, testtypename, testtype, alleles):
         strain, extension = os.path.splitext(os.path.basename(file))
         if not os.path.isfile(outpath+strain+testtypename+'.json'): #skips file if the json for it already exists(has already been run on)
             if not os.stat(file).st_size == 0: #skips empty fasta files
-                # missed=('/home/cintiq/Desktop/campylobacterjejuni/mist/bin/Release/MIST.exe', '-b',
-                missed=('mist', '-b',
+                # missed=('mist', '-b',
+                missed = ('mono', '/home/phac/kye/assemblies_for_ed/Release/MIST.exe', '-b',
                         '-j', outpath+strain+testtypename+'.json',
                         '-a', alleles,
                         '-t', testtype,
@@ -73,10 +76,6 @@ def runmist(missed, outpath, strain):
     shutil.rmtree(outpath+'temp/'+strain+'/') #removes the strain specific temp folder and everything inside
 
 
-
-
-
-
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outpath', default='./mistout/')
@@ -88,14 +87,14 @@ def arguments():
 
 
 def process(path, outpath, testtype, alleles, cores):
-    listlist = getfasta(path)
+    fastalist = getfasta(path)
     pool = multiprocessing.Pool(int(cores))
     testtypename=testnamegetter(testtype)
-    for fastalist in listlist:#goes through each individual list of fastas within the list of lists
-        pathfinder(outpath)
-        margs = mistargs(fastalist, outpath, testtypename, testtype, alleles)
-        for missed, strain in margs: #run MIST in parallel
-            pool.apply_async(runmist, args=(missed, outpath, strain))
+    # for fastalist in listlist:#goes through each individual list of fastas within the list of lists
+    pathfinder(outpath)
+    margs = mistargs(fastalist, outpath, testtypename, testtype, alleles)
+    for missed, strain in margs: #run MIST in parallel
+        pool.apply_async(runmist, args=(missed, outpath, strain))
     pool.close()
     pool.join()
 
