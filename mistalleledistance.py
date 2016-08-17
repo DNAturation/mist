@@ -135,10 +135,7 @@ def combinegroup(nu):
             newnu[i] = iterd1[loop1]
             used.append(iterd1[loop1])
             i+=1
-    if change:  # if there were concatenations, run again in case there's more groups that can be combined
-        combinegroup(newnu)  # calls this function again to make sure that the combined groups cannot be further combined
-    else:
-        return newnu
+    return newnu, change
 
 
 def sequencetyping(dmat, thresh):
@@ -162,8 +159,9 @@ def sequencetyping(dmat, thresh):
             unique.add(strain1)
     for group in nu:
         nu[group] = set(nu[group])
-    change = True  # flag used by the combining function
-    nu = combinegroup(nu)  # calls function to combine all groups with the same strains
+    change = True  # flag used for the combinegroup function on whether or not to rerun the function
+    while change:
+        nu, change = combinegroup(nu)  # calls function to combine all groups with the same strains until change == false
 
     return unique, nonunique, nu
 
