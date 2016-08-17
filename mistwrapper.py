@@ -1,7 +1,6 @@
 #main script that runs mist and generates a report, as well as symlinks based on cutoffs
-#named spray because spraying water creates a mist
 
-import mistmain
+import mistprog
 import mistfastasym
 import mistdistrept
 import update_definitions
@@ -18,9 +17,9 @@ import re
 import time
 
 
-def mistM(path, outpath, testtype, alleles, cores):
+def mistP(path, outpath, testtype, alleles, cores):
     '''runs mist'''
-    mistmain.process(path, outpath, testtype, alleles, cores)
+    mistprog.process(path, outpath, testtype, alleles, cores)
 
 def mistF(path, fastaoutpath, threshhold, outpath, testtypename, cores):
     '''runs a userdefined threshold cutoff and symlinks fasta files that pass'''
@@ -96,7 +95,7 @@ def arguments():
 def processGEN(path, outpath, testtype, alleles, distoutpath, distoutfile, distanceout, seqtyp, thresh, cores):
     '''Runs MIST and creates a report file. Also updates alleles with new found alleles'''
     print('Running MIST...')
-    mistM(path, outpath, testtype, alleles, cores)
+    mistP(path, outpath, testtype, alleles, cores)
     print('Performing update...')
     jsonlist = glob.glob(outpath+'*./json')
     testtypename=testnamegetter(testtype)

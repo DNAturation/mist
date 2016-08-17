@@ -1,5 +1,4 @@
-# runs the MIST main program. Shell for this is called mistspray.py
-# takes in a list of fasta files from spades (maybe quast) and runs blast on them,
+# runs the MIST main program. takes in a list of fasta files from spades (maybe quast) and runs blast on them,
 # identifying the strains they came from (MLST)
 
 import argparse
