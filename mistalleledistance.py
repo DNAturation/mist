@@ -79,7 +79,7 @@ def compare(genedic, genedic2):
     return dmat
 
 
-def csvwriter(dmat, outpath, outfile):
+def csvwriter(dmat, outpath, outfile, heatmap):
     # outsources the prettyifying of the dictionary into a table to an R script, alleledistance.R. Creates a
     # temporary json file for the R script, and deletes it after use
     object, tf = tempfile.mkstemp()
@@ -87,7 +87,8 @@ def csvwriter(dmat, outpath, outfile):
         json.dump(dmat, f, indent=4, sort_keys=True)
     distargs = ('Rscript', 'alleledistance.R',
                 '--jsonfile', tf,
-                '--outfile', os.path.join(outpath, outfile))
+                '--outfile', os.path.join(outpath, outfile),
+                '--heatmap', os.path.join(outpath, heatmap))
     subprocess.call(distargs)
     os.remove(tf)
 
@@ -188,6 +189,7 @@ def stwriter(unique, nonunique, nu, outpath, stout):
 def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outfile', default='alleledistances.csv', help='name of output distance report csv file')
+    parser.add_argument('--heatmap', default='distanceheatmap.png', help='name of the output file for the heatmap of alleledistances')
     parser.add_argument('--seqtyp', default='ST.csv', help='name of output sequence type report csv file')
     parser.add_argument('--outpath', default='mistreport/', help='output directory')
     parser.add_argument('--thresh', default=0, help='how many allele call differences are tolerated before assigning to different strains')
@@ -195,7 +197,7 @@ def arguments():
     return parser.parse_args()
 
 
-def process(path, outpath, outfile, stout, thresh):
+def process(path, outpath, outfile, heatmap, stout, thresh):
     pathfinder(outpath)
     files = filegetter(path)
     genedic = {}
@@ -204,13 +206,13 @@ def process(path, outpath, outfile, stout, thresh):
         reader(file, genedic, genedic2)
     dmat = compare(genedic, genedic2)
     unique, nonunique, nu = sequencetyping(dmat, thresh)
-    csvwriter(dmat, outpath, outfile)
+    csvwriter(dmat, outpath, outfile, heatmap)
     stwriter(unique, nonunique, nu, outpath, stout)
 
 
 def main():
     args = arguments()
-    process(args.path, args.outpath, args.outfile, args.seqtyp, args.thresh)
+    process(args.path, args.outpath, args.outfile, args.heatmap, args.seqtyp, args.thresh)
 
 if __name__ == '__main__':
     main()
