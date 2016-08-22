@@ -1,11 +1,13 @@
 # script written for checking how many genes are missing from a genome, after user determined cutoff, removes the genome
 # and considers it as contamination
-# Takes in report.json from MIST and returns a new json report file of MIST as well as a list of the contaminating genomes
+# Takes in report.json from MIST and returns a new json report file of MIST as well as a list of the
+# contaminating genomes, also whether the strain is isolated from chicken or human
 
 import argparse
 import os
 import json
 import csv
+import re
 from Bio import SeqIO
 
 def pathfinder(outpath):
@@ -71,12 +73,24 @@ def accessorybinaryremover(contaminatinggenomes, fapath, newfa):
                     print('skipping', record.id)
 
 
+def chickenorhuman(straindatapath):
+    chickenornot=dict()
+    notchickenmatch = '^\d\d-'
+    with open(straindatapath, 'r') as f:
+        filereader = csv.reader(f, dialect='excel')
+        for row in filereader:
+            if re.match(notchickenmatch, row[1]):
+                chickenornot[row[0]] = 1
+            else:
+                chickenornot[row[0]] = 0
+    return chickenornot
 
-def isolatedatamaker(data, contaminationlist):#from all the genomes, where the stuff is from
+
+def isolatedatamaker(data, contaminationlist, chickenornot):#from all the genomes, where the stuff is from
     l=list()
     for genome in data['GenomesMissingGenes']:
         if genome not in contaminationlist:
-            l.append([genome, chickenornot])
+            l.append([genome, chickenornot[genome]])
     return l
 
 
@@ -99,7 +113,8 @@ def arguments():
     parser.add_argument('--genomes', default='/home/phac/kye/autocreate/edassemblies/')
     parser.add_argument('--fapath', default='/home/phac/kye/assemblies_for_ed/results/pangenome_1468951604/accessory_binary_genes.fa')
     parser.add_argument('--newfa', default='/home/phac/kye/presentationstuff/edassem/accessory_binary_genes2.fa')
-    parser.add_argument('--isolatedata', default='/home/phac/kye/presentationstuff/edassem/isolatedata.csv')
+    parser.add_argument('--isolatekey', default='/home/phac/kye/presentationstuff/edassem/isolatekey.csv')
+    parser.add_argument('--isolatepath', default='/home/phac/kye/presentationstuff/edassem/isolatedata.csv')
     return parser.parse_args()
 
 def main():
@@ -111,8 +126,9 @@ def main():
     repwriter(contaminatinggenomes, newd, args.outpath, args.repname, args.conlist)
     remover(args.genomes, contaminatinggenomes)
     accessorybinaryremover(contaminatinggenomes, args.fapath, args.newfa)
-    chickend = isolatedatamaker(data, contaminatinggenomes)
-    csvwriter(chickend)
+    chickenornot = chickenorhuman(args.isolatekey)
+    chickend = isolatedatamaker(data, contaminatinggenomes, chickenornot)
+    csvwriter(chickend, args.isolatepath)
 
 if __name__ == '__main__':
     main()
