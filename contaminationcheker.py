@@ -2,6 +2,9 @@
 # and considers it as contamination
 # Takes in report.json from MIST and returns a new json report file of MIST as well as a list of the
 # contaminating genomes, also whether the strain is isolated from chicken or human
+#
+# note this is not for any pipeline, but was written for personal use for the term-end presentation;
+# many things are hard-coded and don't make sense out of context
 
 import argparse
 import os
@@ -22,7 +25,7 @@ def reader(path):
     return data
 
 
-def checker(data, thresh):
+def checker(data, thresh):  # adds all genomes that have over threshold missing genes to a list; genomes that will be thrown out
     contaminatinggenomes=[]
     for strain in data['GenomesMissingGenes']:
         if len(data['GenomesMissingGenes'][strain]) >= int(thresh):
@@ -31,7 +34,7 @@ def checker(data, thresh):
     return contaminatinggenomes+cont
 
 
-def newjsonmaker(contaminatinggenomes, data):
+def newjsonmaker(contaminatinggenomes, data):  # creates dictionary for new json MIST report
     newd = dict()
     newd['GenesMissingGenomes'] ={}
     newd['GenomesMissingGenes'] = {}
@@ -63,7 +66,7 @@ def remover(genomes, contaminatinggenomes):
             os.remove(os.path.join(genomes, file))
 
 
-def accessorybinaryremover(contaminatinggenomes, fapath, newfa):
+def accessorybinaryremover(contaminatinggenomes, fapath, newfa):  # removes genomes from the roary files
     with open(fapath, 'r') as f:
         with open(newfa, 'w') as g:
             for record in SeqIO.parse(f, 'fasta'):
@@ -73,7 +76,7 @@ def accessorybinaryremover(contaminatinggenomes, fapath, newfa):
                     print('skipping', record.id)
 
 
-def chickenorhuman(straindatapath):
+def chickenorhuman(straindatapath):  # determines whether the strain came from humans or chickens based off the name
     chickenornot=dict()
     notchickenmatch = '^\d\d-'
     with open(straindatapath, 'r') as f:
@@ -86,7 +89,7 @@ def chickenorhuman(straindatapath):
     return chickenornot
 
 
-def isolatedatamaker(data, contaminationlist, chickenornot):#from all the genomes, where the stuff is from
+def isolatedatamaker(data, contaminationlist, chickenornot):  # from all the genomes, where the stuff is from
     l=list()
     for genome in data['GenomesMissingGenes']:
         if genome not in contaminationlist:
